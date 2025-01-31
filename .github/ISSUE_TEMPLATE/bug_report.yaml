@@ -18,7 +18,7 @@ body:
         cross-repository effort, it probably belongs here.  Feel free to continue :wink:
 
       [cr-issue]: https://github.com/kubernetes-sigs/controller-runtime/issues/new
-      [cr-issue]: https://github.com/kubernetes-sigs/controller-tools/issues/new
+      [ct-issue]: https://github.com/kubernetes-sigs/controller-tools/issues/new
 
 - type: markdown
   attributes:
@@ -36,7 +36,7 @@ body:
       <summary>Code & details examples</summary>
       
       `````markdown
-      Some code code written in Go:
+      Some code written in Go:
 
       ```go
       type Manager struct {
@@ -98,7 +98,7 @@ body:
   id: cli-version
   attributes:
     label: KubeBuilder (CLI) Version
-    description: "use `kubebuilder --version` to find this out"
+    description: "use `kubebuilder version` to find this out"
   validations:
     required: true
 

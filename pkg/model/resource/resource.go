@@ -20,7 +20,7 @@ import (
 	"fmt"
 	"strings"
 
-	"sigs.k8s.io/kubebuilder/v3/pkg/internal/validation"
+	"sigs.k8s.io/kubebuilder/v4/pkg/internal/validation"
 )
 
 // Resource contains the information required to scaffold files for a resource.
@@ -42,6 +42,12 @@ type Resource struct {
 
 	// Webhooks holds the information related to the associated webhooks.
 	Webhooks *Webhooks `json:"webhooks,omitempty"`
+
+	// External specifies if the resource is defined externally.
+	External bool `json:"external,omitempty"`
+
+	// Core specifies if the resource is from Kubernetes API.
+	Core bool `json:"core,omitempty"`
 }
 
 // Validate checks that the Resource is valid.
@@ -119,6 +125,11 @@ func (r Resource) HasConversionWebhook() bool {
 	return r.Webhooks != nil && r.Webhooks.Conversion
 }
 
+// IsExternal returns true if the resource was scaffold as external.
+func (r Resource) IsExternal() bool {
+	return r.External
+}
+
 // IsRegularPlural returns true if the plural is the regular plural form for the kind.
 func (r Resource) IsRegularPlural() bool {
 	return r.Plural == RegularPlural(r.Kind)
@@ -148,18 +159,19 @@ func (r *Resource) Update(other Resource) error {
 
 	// Make sure we are not merging resources for different GVKs.
 	if !r.GVK.IsEqualTo(other.GVK) {
-		return fmt.Errorf("unable to update a Resource with another with non-matching GVK")
+		return fmt.Errorf("unable to update a Resource (GVK %+v) with another with non-matching GVK %+v", r.GVK, other.GVK)
 	}
 
 	if r.Plural != other.Plural {
-		return fmt.Errorf("unable to update Resource with another with non-matching Plural")
+		return fmt.Errorf("unable to update Resource (Plural %q) with another with non-matching Plural %q",
+			r.Plural, other.Plural)
 	}
 
 	if other.Path != "" && r.Path != other.Path {
 		if r.Path == "" {
 			r.Path = other.Path
 		} else {
-			return fmt.Errorf("unable to update Resource with another with non-matching Path")
+			return fmt.Errorf("unable to update Resource (Path %q) with another with non-matching Path %q", r.Path, other.Path)
 		}
 	}
 
@@ -178,11 +190,8 @@ func (r *Resource) Update(other Resource) error {
 	if r.Webhooks == nil && other.Webhooks != nil {
 		r.Webhooks = &Webhooks{}
 	}
-	if err := r.Webhooks.Update(other.Webhooks); err != nil {
-		return err
-	}
 
-	return nil
+	return r.Webhooks.Update(other.Webhooks)
 }
 
 func wrapKey(key string) string {

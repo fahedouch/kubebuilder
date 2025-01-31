@@ -39,10 +39,29 @@ type toHTML interface {
 // Text is a chunk of text in an HTML doc.
 type Text string
 
-// WriteHTML writes the string as HTML to the given Writer
+// WriteHTML writes the string as HTML to the given Writer while accounting for mdBook's handling
+// of backticks. Given mdBook's behavior of treating backticked content as raw text, this function
+// ensures proper rendering by preventing unnecessary HTML escaping within code snippets. Chunks
+// outside of backticks are HTML-escaped for security, while chunks inside backticks remain as raw
+// text, preserving mdBook's intended rendering of code content.
 func (t Text) WriteHTML(w io.Writer) error {
-	_, err := io.WriteString(w, html.EscapeString(string(t)))
-	return err
+	textChunks := strings.Split(string(t), "`")
+
+	for i, chunk := range textChunks {
+		if i%2 == 0 { // Outside backticks, escape and write HTML
+			_, err := io.WriteString(w, html.EscapeString(chunk))
+			if err != nil {
+				return err
+			}
+		} else { // Inside backticks, write raw HTML
+			_, err := io.WriteString(w, "`"+chunk+"`")
+			if err != nil {
+				return err
+			}
+		}
+	}
+
+	return nil
 }
 
 // Tag is some tag with contents and attributes in an HTML doc.
@@ -100,7 +119,7 @@ type classes []string
 // ToAttrs implements Attrs
 func (c classes) ToAttrs() string { return fmt.Sprintf("class=%q", strings.Join(c, " ")) }
 
-// optionalClasses sets the the class attribute to these class names, if their values are true.
+// optionalClasses sets the class attribute to these class names, if their values are true.
 type optionalClasses map[string]bool
 
 // ToAttrs implements Attrs

@@ -1,6 +1,6 @@
 [build]
     base = "docs/book"
-    command = "./install-and-build.sh"
+    command = "GO_VERSION=1.23.0 ./install-and-build.sh"
     publish = "docs/book/book"
     functions = "docs/book/functions"
 
@@ -90,8 +90,8 @@
     from = "https://go.kubebuilder.io/releases/:version/:os/:arch"
     # I don't quite know why, but netlify (or at least the dev mode) *insists*
     # on eating every other query parameter, so just use paths instead
-    to = "/.netlify/functions/handle-version/:version/:os/:arch"
-    # 200 --> don't redirect to the the function then to whereever it says,
+    to = "/.netlify/functions/handle-version/releases/:version/:os/:arch"
+    # 200 --> don't redirect to the function then to whereever it says,
     # just pretend like the function is mounted directly here
     status = 200
     force = true
@@ -118,31 +118,6 @@
 [[redirects]]
     from = "https://go.kubebuilder.io/test-tools/:k8sversion/:os/:arch"
     to = "https://storage.googleapis.com/kubebuilder-tools/kubebuilder-tools-:k8sversion-:os-:arch.tar.gz"
-    status = 302
-    force = true
-
-# Image redirects.
-[[redirects]]
-    from = "https://go.kubebuilder.io/images"
-    to = "gcr.io/kubebuilder"
-    status = 302
-    force = true
-
-[[redirects]]
-    from = "https://go.kubebuilder.io/images/:os"
-    to = "https://go.kubebuilder.io/images/:os/amd64"
-    status = 302
-    force = true
-
-[[redirects]]
-    from = "https://go.kubebuilder.io/images/:os/:arch"
-    to = "gcr.io/kubebuilder/thirdparty-:os-:arch"
-    status = 302
-    force = true
-
-[[redirects]]
-    from = "https://go.kubebuilder.io/images/:os/:arch/:k8sversion"
-    to = "gcr.io/kubebuilder/thirdparty-:os-:arch::k8sversion"
     status = 302
     force = true
 

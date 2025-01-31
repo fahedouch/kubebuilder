@@ -1,4 +1,5 @@
 /*
+Copyright 2022 The Kubernetes authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -19,7 +20,7 @@ limitations under the License.
 Our package starts out with some basic imports.  Particularly:
 
 - The core [controller-runtime](https://pkg.go.dev/sigs.k8s.io/controller-runtime?tab=doc) library
-- The default controller-runtime logging, Zap (more on that a bit later)
+- The default controller-runtime logging, [Zap](https://pkg.go.dev/go.uber.org/zap) (more on that a bit later)
 
 */
 
@@ -27,7 +28,6 @@ package main
 
 import (
 	"flag"
-	"fmt"
 	"os"
 
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
@@ -42,6 +42,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/cache"
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
+	"sigs.k8s.io/controller-runtime/pkg/metrics/server"
+	"sigs.k8s.io/controller-runtime/pkg/webhook"
 	// +kubebuilder:scaffold:imports
 )
 
@@ -60,7 +62,7 @@ var (
 func init() {
 	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
 
-	//+kubebuilder:scaffold:scheme
+	// +kubebuilder:scaffold:scheme
 }
 
 /*
@@ -103,9 +105,11 @@ func main() {
 	ctrl.SetLogger(zap.New(zap.UseFlagOptions(&opts)))
 
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
-		Scheme:                 scheme,
-		MetricsBindAddress:     metricsAddr,
-		Port:                   9443,
+		Scheme: scheme,
+		Metrics: server.Options{
+			BindAddress: metricsAddr,
+		},
+		WebhookServer:          webhook.NewServer(webhook.Options{Port: 9443}),
 		HealthProbeBindAddress: probeAddr,
 		LeaderElection:         enableLeaderElection,
 		LeaderElectionID:       "80807133.tutorial.kubebuilder.io",
@@ -116,42 +120,58 @@ func main() {
 	}
 
 	/*
-		Note that the Manager can restrict the namespace that all controllers will watch for resources by:
+		Note that the `Manager` can restrict the namespace that all controllers will watch for resources by:
 	*/
 
-	mgr, err = ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
-		Scheme:                 scheme,
-		Namespace:              namespace,
-		MetricsBindAddress:     metricsAddr,
-		Port:                   9443,
+	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
+		Scheme: scheme,
+		Cache: cache.Options{
+			DefaultNamespaces: map[string]cache.Config{
+				namespace: {},
+			},
+		},
+		Metrics: server.Options{
+			BindAddress: metricsAddr,
+		},
+		WebhookServer:          webhook.NewServer(webhook.Options{Port: 9443}),
 		HealthProbeBindAddress: probeAddr,
 		LeaderElection:         enableLeaderElection,
 		LeaderElectionID:       "80807133.tutorial.kubebuilder.io",
 	})
 
 	/*
-		The above example will change the scope of your project to a single Namespace. In this scenario,
+		The above example will change the scope of your project to a single `Namespace`. In this scenario,
 		it is also suggested to restrict the provided authorization to this namespace by replacing the default
-		ClusterRole and ClusterRoleBinding to Role and RoleBinding respectively.
-		For further information see the kubernetes documentation about Using [RBAC Authorization](https://kubernetes.io/docs/reference/access-authn-authz/rbac/).
+		`ClusterRole` and `ClusterRoleBinding` to `Role` and `RoleBinding` respectively.
+		For further information see the Kubernetes documentation about [Using RBAC Authorization](https://kubernetes.io/docs/reference/access-authn-authz/rbac/).
 
-		Also, it is possible to use the MultiNamespacedCacheBuilder to watch a specific set of namespaces:
+		Also, it is possible to use the [`DefaultNamespaces`](https://pkg.go.dev/sigs.k8s.io/controller-runtime/pkg/cache#Options)
+		from `cache.Options{}` to cache objects in a specific set of namespaces:
 	*/
 
 	var namespaces []string // List of Namespaces
+	defaultNamespaces := make(map[string]cache.Config)
 
-	mgr, err = ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
-		Scheme:                 scheme,
-		NewCache:               cache.MultiNamespacedCacheBuilder(namespaces),
-		MetricsBindAddress:     fmt.Sprintf("%s:%d", metricsHost, metricsPort),
-		Port:                   9443,
+	for _, ns := range namespaces {
+		defaultNamespaces[ns] = cache.Config{}
+	}
+
+	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
+		Scheme: scheme,
+		Cache: cache.Options{
+			DefaultNamespaces: defaultNamespaces,
+		},
+		Metrics: server.Options{
+			BindAddress: metricsAddr,
+		},
+		WebhookServer:          webhook.NewServer(webhook.Options{Port: 9443}),
 		HealthProbeBindAddress: probeAddr,
 		LeaderElection:         enableLeaderElection,
 		LeaderElectionID:       "80807133.tutorial.kubebuilder.io",
 	})
 
 	/*
-		For further information see [MultiNamespacedCacheBuilder](https://pkg.go.dev/sigs.k8s.io/controller-runtime/pkg/cache?tab=doc#MultiNamespacedCacheBuilder)
+		For further information see [`cache.Options{}`](https://pkg.go.dev/sigs.k8s.io/controller-runtime/pkg/cache#Options)
 	*/
 
 	// +kubebuilder:scaffold:builder

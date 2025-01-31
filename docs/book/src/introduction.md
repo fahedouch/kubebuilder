@@ -1,6 +1,7 @@
 **Note:** Impatient readers may head straight to [Quick Start](quick-start.md).
 
-**Using Kubebuilder v1 or v2? Check the legacy documentation for [v1](https://book-v1.book.kubebuilder.io) or [v2](https://book-v2.book.kubebuilder.io)** 
+**Using previous version of Kubebuilder v1 or v2?**
+**Check the legacy documentation for [v1](https://book-v1.book.kubebuilder.io), [v2](https://book-v2.book.kubebuilder.io) or [v3](https://book-v3.book.kubebuilder.io)**
 
 ## Who is this for
 
@@ -23,7 +24,7 @@ Including:
 
 #### Kubernetes API extension developers
 
-API extension developers will learn the principals and concepts behind implementing canonical
+API extension developers will learn the principles and concepts behind implementing canonical
 Kubernetes APIs, as well as simple tools and libraries for rapid execution.  This
 book covers pitfalls and misconceptions that extension developers commonly encounter.
 
@@ -51,8 +52,8 @@ common tooling to manage the objects.
 Building services as Kubernetes APIs provides many advantages to plain old REST, including:
 
 * Hosted API endpoints, storage, and validation.
-* Rich tooling and clis such as `kubectl` and `kustomize`.
-* Support for Authn and granular Authz.
+* Rich tooling and CLIs such as `kubectl` and `kustomize`.
+* Support for AuthN and granular AuthZ.
 * Support for API evolution through API versioning and conversion.
 * Facilitation of adaptive / self-healing APIs that continuously respond to changes
   in the system state without user intervention.

@@ -12,7 +12,7 @@ schedule: "*/1 * * * *"
 That's a pretty textbook example of a special string format (it's also
 pretty unreadable unless you're a Unix sysadmin).
 
-Let's make it a bit more structured.  According to the our [CronJob
+Let's make it a bit more structured.  According to our [CronJob
 code][cronjob-sched-code], we support "standard" Cron format.
 
 In Kubernetes, **all versions must be safely round-tripable through each
@@ -40,6 +40,8 @@ We'll need a new API version for this change.  Let's call it v2:
 kubebuilder create api --group batch --version v2 --kind CronJob
 ```
 
+Press `y` for "Create Resource" and `n` for "Create Controller".
+
 Now, let's copy over our existing types, and make the change:
 
 {{#literatego ./testdata/project/api/v2/cronjob_types.go}}
@@ -50,4 +52,4 @@ Now, let's copy over our existing types, and make the change:
 
 Now that we've got our types in place, we'll need to set up conversion...
 
-[cronjob-sched-code]: /TODO.md
+[cronjob-sched-code]: ./multiversion-tutorial/testdata/project/api/v2/cronjob_types.go "CronJob Code"

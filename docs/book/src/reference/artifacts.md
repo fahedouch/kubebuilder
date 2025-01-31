@@ -1,16 +1,78 @@
 # Artifacts
 
-Kubebuilder publishes test binaries and container images in addition
-to the main binary releases.
+To test your controllers, you will need to use the tarballs containing the required binaries:
 
-## Test Binaries
+```shell
+./bin/k8s/
+└── 1.25.0-darwin-amd64
+    ├── etcd
+    ├── kube-apiserver
+    └── kubectl
+```
 
-You can find test binary tarballs for all Kubernetes versions and host platforms at `https://go.kubebuilder.io/test-tools`.
-You can find a test binary tarball for a particular Kubernetes version and host platform at `https://go.kubebuilder.io/test-tools/${version}/${os}/${arch}`.
+These tarballs are released by [controller-tools](https://github.com/kubernetes-sigs/controller-tools),
+and you can find the list of available versions at: [envtest-releases.yaml](https://github.com/kubernetes-sigs/controller-tools/blob/main/envtest-releases.yaml).
 
-## Container Images
+When you run `make envtest` or `make test`, the necessary tarballs are downloaded and properly
+configured for your project.
 
-You can find all container image versions for a particular platform at `https://go.kubebuilder.io/images/${os}/${arch}`
-or at `gcr.io/kubebuilder/thirdparty-${os}-${arch}`.
-You can find the container image for a particular version and platform at `https://go.kubebuilder.io/images/${os}/${arch}/${version}`
-or at `gcr.io/kubebuilder/thirdparty-${os}-${arch}:${version}`.
+<aside class="note">
+<h1>Setup ENV TEST tool</h1>
+
+To learn more about the tooling used to configure ENVTEST, which is utilized in the `setup-envtest`
+target in the Makefile of projects built with Kubebuilder, see the [README](https://github.com/kubernetes-sigs/controller-runtime/blob/main/tools/setup-envtest/README.md)
+of its tooling. Additionally, you can find more information by reviewing the Kubebuilder [ENVTEST][env-test-doc] documentation.
+
+</aside>
+
+
+<aside class="note warning">
+<h1>IMPORTANT: Action Required: Ensure that you no longer use https://storage.googleapis.com/kubebuilder-tools </h1>
+
+**Artifacts provided under [https://storage.googleapis.com/kubebuilder-tools](https://storage.googleapis.com/kubebuilder-tools) are deprecated and Kubebuilder maintainers are no longer able to support, build, or ensure the promotion of these artifacts.**
+
+You will find the [ENVTEST][env-test-doc] binaries available in the new location from k8s release `1.28`, see: [https://github.com/kubernetes-sigs/controller-tools/blob/main/envtest-releases.yaml](https://github.com/kubernetes-sigs/controller-tools/blob/main/envtest-releases.yaml).
+Also, binaries to test your controllers after k8s `1.29.3` will no longer be found in the old location.
+
+**New binaries are only promoted in the new location**.
+
+**You should ensure that your projects are using the new location.**
+Please ensure you use `setup-envtest` from the controller-runtime `release v0.19.0` to be able to download those.
+**This update is fully transparent for Kubebuilder users.**
+
+The artefacts for [ENVTEST][env-test-doc] k8s `1.31` are exclusively available at: [Controller Tools Releases][controller-gen].
+
+You can refer to the Makefile of the Kubebuilder scaffold and observe that the envtest setup is consistently aligned across all controller-runtime releases. Starting from `release-0.19`, it is configured to automatically download the artefact from the correct location, **ensuring that kubebuilder users are not impacted.**
+
+```shell
+## Tool Binaries
+..
+ENVTEST ?= $(LOCALBIN)/setup-envtest
+...
+
+## Tool Versions
+...
+#ENVTEST_VERSION is the version of controller-runtime release branch to fetch the envtest setup script (i.e. release-0.20)
+ENVTEST_VERSION ?= $(shell go list -m -f "{{ .Version }}" sigs.k8s.io/controller-runtime | awk -F'[v.]' '{printf "release-%d.%d", $$2, $$3}')
+#ENVTEST_K8S_VERSION is the version of Kubernetes to use for setting up ENVTEST binaries (i.e. 1.31)
+ENVTEST_K8S_VERSION ?= $(shell go list -m -f "{{ .Version }}" k8s.io/api | awk -F'[v.]' '{printf "1.%d", $$3}')
+...
+.PHONY: setup-envtest
+setup-envtest: envtest ## Download the binaries required for ENVTEST in the local bin directory.
+	@echo "Setting up envtest binaries for Kubernetes version $(ENVTEST_K8S_VERSION)..."
+	@$(ENVTEST) use $(ENVTEST_K8S_VERSION) --bin-dir $(LOCALBIN) -p path || { \
+		echo "Error: Failed to set up envtest binaries for version $(ENVTEST_K8S_VERSION)."; \
+		exit 1; \
+	}
+
+.PHONY: envtest
+envtest: $(ENVTEST) ## Download setup-envtest locally if necessary.
+$(ENVTEST): $(LOCALBIN)
+	$(call go-install-tool,$(ENVTEST),sigs.k8s.io/controller-runtime/tools/setup-envtest,$(ENVTEST_VERSION))
+```
+
+</aside>
+
+[env-test-doc]: ./envtest.md
+[controller-runtime]: https://github.com/kubernetes-sigs/controller-runtime
+[controller-gen]: https://github.com/kubernetes-sigs/controller-tools/releases

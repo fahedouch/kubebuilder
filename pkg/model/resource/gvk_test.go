@@ -1,5 +1,5 @@
 /*
-Copyright 2021 The Kubernetes Authors.
+Copyright 2022 The Kubernetes Authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -19,25 +19,27 @@ package resource
 import (
 	"strings"
 
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/ginkgo/extensions/table"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
 
 var _ = Describe("GVK", func() {
 	const (
-		group   = "group"
-		domain  = "my.domain"
-		version = "v1"
-		kind    = "Kind"
+		group           = "group"
+		domain          = "my.domain"
+		version         = "v1"
+		kind            = "Kind"
+		internalVersion = "__internal"
 	)
 
-	var gvk = GVK{Group: group, Domain: domain, Version: version, Kind: kind}
+	gvk := GVK{Group: group, Domain: domain, Version: version, Kind: kind}
 
 	Context("Validate", func() {
-		It("should succeed for a valid GVK", func() {
-			Expect(gvk.Validate()).To(Succeed())
-		})
+		DescribeTable("should pass valid GVKs",
+			func(gvk GVK) { Expect(gvk.Validate()).To(Succeed()) },
+			Entry("Standard GVK", gvk),
+			Entry("Version (__internal)", GVK{Group: group, Domain: domain, Version: internalVersion, Kind: kind}),
+		)
 
 		DescribeTable("should fail for invalid GVKs",
 			func(gvk GVK) { Expect(gvk.Validate()).NotTo(Succeed()) },
@@ -48,13 +50,11 @@ var _ = Describe("GVK", func() {
 			Entry("Domain (non-alpha characters)", GVK{Group: group, Domain: "_*?", Version: version, Kind: kind}),
 			Entry("Group and Domain (empty)", GVK{Group: "", Domain: "", Version: version, Kind: kind}),
 			Entry("Version (empty)", GVK{Group: group, Domain: domain, Version: "", Kind: kind}),
-			Entry("Version (no v prefix)", GVK{Group: group, Domain: domain, Version: "1", Kind: kind}),
-			Entry("Version (wrong prefix)", GVK{Group: group, Domain: domain, Version: "a1", Kind: kind}),
-			Entry("Version (unstable no v prefix)", GVK{Group: group, Domain: domain, Version: "1beta1", Kind: kind}),
-			Entry("Version (unstable no alpha/beta number)",
-				GVK{Group: group, Domain: domain, Version: "v1beta", Kind: kind}),
-			Entry("Version (multiple unstable)",
-				GVK{Group: group, Domain: domain, Version: "v1beta1alpha1", Kind: kind}),
+			Entry("Version (wrong prefix)", GVK{Group: group, Domain: domain, Version: "-example.com", Kind: kind}),
+			Entry("Version (wrong suffix)", GVK{Group: group, Domain: domain, Version: "example.com-", Kind: kind}),
+			Entry("Version (uppercase)", GVK{Group: group, Domain: domain, Version: "Example.com", Kind: kind}),
+			Entry("Version (special characters)", GVK{Group: group, Domain: domain, Version: "example!domain.com", Kind: kind}),
+			Entry("Version (consecutive dots)", GVK{Group: group, Domain: domain, Version: "example..com", Kind: kind}),
 			Entry("Kind (empty)", GVK{Group: group, Domain: domain, Version: version, Kind: ""}),
 			Entry("Kind (whitespaces)", GVK{Group: group, Domain: domain, Version: version, Kind: "Ki nd"}),
 			Entry("Kind (lowercase)", GVK{Group: group, Domain: domain, Version: version, Kind: "kind"}),

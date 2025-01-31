@@ -1,5 +1,5 @@
 /*
-Copyright 2021 The Kubernetes Authors.
+Copyright 2022 The Kubernetes Authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -21,7 +21,7 @@ import (
 	"strings"
 
 	"github.com/spf13/cobra"
-	configgen "sigs.k8s.io/kubebuilder/v3/pkg/cli/alpha/config-gen"
+	"sigs.k8s.io/kubebuilder/v4/pkg/cli/alpha"
 )
 
 const (
@@ -29,7 +29,15 @@ const (
 )
 
 var alphaCommands = []*cobra.Command{
-	configgen.NewCommand(),
+	newAlphaCommand(),
+	alpha.NewScaffoldCommand(),
+}
+
+func newAlphaCommand() *cobra.Command {
+	cmd := &cobra.Command{
+		// TODO: If we need to create alpha commands please add a new file for each command
+	}
+	return cmd
 }
 
 func (c *CLI) newAlphaCmd() *cobra.Command {
@@ -44,6 +52,7 @@ Alpha subcommands are for unstable features.
 - No backwards compatibility is provided for any alpha subcommands.
 `),
 	}
+	// TODO: Add alpha commands here if we need to have them
 	for i := range alphaCommands {
 		alpha.AddCommand(alphaCommands[i])
 	}

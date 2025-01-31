@@ -19,11 +19,10 @@ package plugin
 import (
 	"sort"
 
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/ginkgo/extensions/table"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
-	"sigs.k8s.io/kubebuilder/v3/pkg/model/stage"
+	"sigs.k8s.io/kubebuilder/v4/pkg/model/stage"
 )
 
 var _ = Describe("Version", func() {
@@ -155,7 +154,6 @@ var _ = Describe("Version", func() {
 			})
 			Expect(versions).To(Equal(sortedVersions))
 		})
-
 	})
 
 	Context("IsStable", func() {
@@ -183,5 +181,4 @@ var _ = Describe("Version", func() {
 			Entry("for version 22 (beta)", Version{Number: 22, Stage: stage.Beta}),
 		)
 	})
-
 })

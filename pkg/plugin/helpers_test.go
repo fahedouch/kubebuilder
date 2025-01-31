@@ -1,5 +1,5 @@
 /*
-Copyright 2021 The Kubernetes Authors.
+Copyright 2022 The Kubernetes Authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -19,12 +19,11 @@ package plugin
 import (
 	"sort"
 
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/ginkgo/extensions/table"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
-	"sigs.k8s.io/kubebuilder/v3/pkg/config"
-	"sigs.k8s.io/kubebuilder/v3/pkg/model/stage"
+	"sigs.k8s.io/kubebuilder/v4/pkg/config"
+	"sigs.k8s.io/kubebuilder/v4/pkg/model/stage"
 )
 
 const (
@@ -62,12 +61,6 @@ var _ = Describe("SplitKey", func() {
 		n, v := SplitKey(name)
 		Expect(n).To(Equal(name))
 		Expect(v).To(Equal(""))
-	})
-})
-
-var _ = Describe("GetShortName", func() {
-	It("should extract base names from domains", func() {
-		Expect(GetShortName(name)).To(Equal(short))
 	})
 })
 

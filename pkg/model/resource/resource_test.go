@@ -17,12 +17,10 @@ limitations under the License.
 package resource
 
 import (
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/ginkgo/extensions/table"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
 
-//nolint:dupl
 var _ = Describe("Resource", func() {
 	const (
 		group   = "group"
@@ -235,6 +233,7 @@ var _ = Describe("Resource", func() {
 			Expect(other.Webhooks.Defaulting).To(Equal(res.Webhooks.Defaulting))
 			Expect(other.Webhooks.Validation).To(Equal(res.Webhooks.Validation))
 			Expect(other.Webhooks.Conversion).To(Equal(res.Webhooks.Conversion))
+			Expect(other.Webhooks.Spoke).To(Equal(res.Webhooks.Spoke))
 		})
 
 		It("modifying the copy should not affect the original", func() {

@@ -1,5 +1,5 @@
 /*
-Copyright 2021 The Kubernetes Authors.
+Copyright 2022 The Kubernetes Authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -17,12 +17,12 @@ limitations under the License.
 package machinery
 
 import (
-	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
-	"sigs.k8s.io/kubebuilder/v3/pkg/config"
-	cfgv3 "sigs.k8s.io/kubebuilder/v3/pkg/config/v3"
-	"sigs.k8s.io/kubebuilder/v3/pkg/model/resource"
+	"sigs.k8s.io/kubebuilder/v4/pkg/config"
+	cfgv3 "sigs.k8s.io/kubebuilder/v4/pkg/config/v3"
+	"sigs.k8s.io/kubebuilder/v4/pkg/model/resource"
 )
 
 type templateBase struct {
@@ -74,15 +74,6 @@ func (t *templateWithMultiGroup) InjectMultiGroup(multiGroup bool) {
 	t.multiGroup = multiGroup
 }
 
-type templateWithComponentConfig struct {
-	templateBase
-	componentConfig bool
-}
-
-func (t *templateWithComponentConfig) InjectComponentConfig(componentConfig bool) {
-	t.componentConfig = componentConfig
-}
-
 type templateWithBoilerplate struct {
 	templateBase
 	boilerplate string
@@ -102,7 +93,7 @@ func (t *templateWithResource) InjectResource(res *resource.Resource) {
 }
 
 var _ = Describe("injector", func() {
-	var tmp = templateBase{
+	tmp := templateBase{
 		path:           "my/path/to/file",
 		ifExistsAction: Error,
 	}
@@ -217,31 +208,6 @@ var _ = Describe("injector", func() {
 					Expect(template.multiGroup).To(BeTrue())
 				})
 			})
-
-			Context("Component config", func() {
-				var template *templateWithComponentConfig
-
-				BeforeEach(func() {
-					template = &templateWithComponentConfig{templateBase: tmp}
-				})
-
-				It("should not inject anything if the config is nil", func() {
-					injector{}.injectInto(template)
-					Expect(template.componentConfig).To(BeFalse())
-				})
-
-				It("should not set the flag if the config doesn't have the component config flag set", func() {
-					injector{config: c}.injectInto(template)
-					Expect(template.componentConfig).To(BeFalse())
-				})
-
-				It("should set the flag if the config has the component config flag set", func() {
-					Expect(c.SetComponentConfig()).To(Succeed())
-
-					injector{config: c}.injectInto(template)
-					Expect(template.componentConfig).To(BeTrue())
-				})
-			})
 		})
 
 		Context("Boilerplate", func() {
@@ -277,7 +243,7 @@ var _ = Describe("injector", func() {
 			})
 
 			It("should inject if the config has a domain set", func() {
-				var res = &resource.Resource{
+				res := &resource.Resource{
 					GVK: resource.GVK{
 						Group:   "group",
 						Domain:  "my.domain",
@@ -289,7 +255,6 @@ var _ = Describe("injector", func() {
 				injector{resource: res}.injectInto(template)
 				Expect(template.resource).To(Equal(res))
 			})
-
 		})
 	})
 })

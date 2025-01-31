@@ -1,5 +1,5 @@
 /*
-Copyright 2021 The Kubernetes Authors.
+Copyright 2022 The Kubernetes Authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -21,12 +21,11 @@ import (
 	"sort"
 	"testing"
 
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/ginkgo/extensions/table"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 
-	"sigs.k8s.io/kubebuilder/v3/pkg/config"
-	"sigs.k8s.io/kubebuilder/v3/pkg/model/resource"
+	"sigs.k8s.io/kubebuilder/v4/pkg/config"
+	"sigs.k8s.io/kubebuilder/v4/pkg/model/resource"
 )
 
 func TestConfigV3(t *testing.T) {
@@ -34,7 +33,7 @@ func TestConfigV3(t *testing.T) {
 	RunSpecs(t, "Config V3 Suite")
 }
 
-var _ = Describe("cfg", func() {
+var _ = Describe("Cfg", func() {
 	const (
 		domain = "my.domain"
 		repo   = "myrepo"
@@ -46,7 +45,7 @@ var _ = Describe("cfg", func() {
 	)
 
 	var (
-		c cfg
+		c Cfg
 
 		pluginChain = []string{"go.kubebuilder.io/v2"}
 
@@ -54,7 +53,7 @@ var _ = Describe("cfg", func() {
 	)
 
 	BeforeEach(func() {
-		c = cfg{
+		c = Cfg{
 			Version:     Version,
 			Domain:      domain,
 			Repository:  repo,
@@ -132,28 +131,6 @@ var _ = Describe("cfg", func() {
 			c.MultiGroup = true
 			Expect(c.ClearMultiGroup()).To(Succeed())
 			Expect(c.MultiGroup).To(BeFalse())
-		})
-	})
-
-	Context("Component config", func() {
-		It("IsComponentConfig should return false if not set", func() {
-			Expect(c.IsComponentConfig()).To(BeFalse())
-		})
-
-		It("IsComponentConfig should return true if set", func() {
-			c.ComponentConfig = true
-			Expect(c.IsComponentConfig()).To(BeTrue())
-		})
-
-		It("SetComponentConfig should fail to enable component config support", func() {
-			Expect(c.SetComponentConfig()).To(Succeed())
-			Expect(c.ComponentConfig).To(BeTrue())
-		})
-
-		It("ClearComponentConfig should fail to disable component config support", func() {
-			c.ComponentConfig = false
-			Expect(c.ClearComponentConfig()).To(Succeed())
-			Expect(c.ComponentConfig).To(BeFalse())
 		})
 	})
 
@@ -254,7 +231,7 @@ var _ = Describe("cfg", func() {
 		It("AddResource should add the provided resource if non-existent", func() {
 			l := len(c.Resources)
 			Expect(c.AddResource(res)).To(Succeed())
-			Expect(len(c.Resources)).To(Equal(l + 1))
+			Expect(c.Resources).To(HaveLen(l + 1))
 
 			checkResource(c.Resources[0], resWithoutPlural)
 		})
@@ -263,13 +240,13 @@ var _ = Describe("cfg", func() {
 			c.Resources = append(c.Resources, res)
 			l := len(c.Resources)
 			Expect(c.AddResource(res)).To(Succeed())
-			Expect(len(c.Resources)).To(Equal(l))
+			Expect(c.Resources).To(HaveLen(l))
 		})
 
 		It("UpdateResource should add the provided resource if non-existent", func() {
 			l := len(c.Resources)
 			Expect(c.UpdateResource(res)).To(Succeed())
-			Expect(len(c.Resources)).To(Equal(l + 1))
+			Expect(c.Resources).To(HaveLen(l + 1))
 
 			checkResource(c.Resources[0], resWithoutPlural)
 		})
@@ -288,7 +265,7 @@ var _ = Describe("cfg", func() {
 			checkResource(c.Resources[0], r)
 
 			Expect(c.UpdateResource(res)).To(Succeed())
-			Expect(len(c.Resources)).To(Equal(l))
+			Expect(c.Resources).To(HaveLen(l))
 
 			checkResource(c.Resources[0], resWithoutPlural)
 		})
@@ -377,14 +354,14 @@ var _ = Describe("cfg", func() {
 		)
 
 		var (
-			c0 = cfg{
+			c0 = Cfg{
 				Version:     Version,
 				Domain:      domain,
 				Repository:  repo,
 				Name:        name,
 				PluginChain: pluginChain,
 			}
-			c1 = cfg{
+			c1 = Cfg{
 				Version:     Version,
 				Domain:      domain,
 				Repository:  repo,
@@ -396,7 +373,7 @@ var _ = Describe("cfg", func() {
 					},
 				},
 			}
-			c2 = cfg{
+			c2 = Cfg{
 				Version:     Version,
 				Domain:      domain,
 				Repository:  repo,
@@ -430,7 +407,7 @@ var _ = Describe("cfg", func() {
 		})
 
 		DescribeTable("DecodePluginConfig should retrieve the plugin data correctly",
-			func(inputConfig cfg, expectedPluginConfig PluginConfig) {
+			func(inputConfig Cfg, expectedPluginConfig PluginConfig) {
 				var pluginConfig PluginConfig
 				Expect(inputConfig.DecodePluginConfig(key, &pluginConfig)).To(Succeed())
 				Expect(pluginConfig).To(Equal(expectedPluginConfig))
@@ -442,7 +419,7 @@ var _ = Describe("cfg", func() {
 		)
 
 		DescribeTable("EncodePluginConfig should encode the plugin data correctly",
-			func(pluginConfig PluginConfig, expectedConfig cfg) {
+			func(pluginConfig PluginConfig, expectedConfig Cfg) {
 				Expect(c.EncodePluginConfig(key, pluginConfig)).To(Succeed())
 				Expect(c).To(Equal(expectedConfig))
 			},
@@ -456,21 +433,20 @@ var _ = Describe("cfg", func() {
 	Context("Persistence", func() {
 		var (
 			// BeforeEach is called after the entries are evaluated, and therefore, c is not available
-			c1 = cfg{
+			c1 = Cfg{
 				Version:     Version,
 				Domain:      domain,
 				Repository:  repo,
 				Name:        name,
 				PluginChain: pluginChain,
 			}
-			c2 = cfg{
-				Version:         Version,
-				Domain:          otherDomain,
-				Repository:      otherRepo,
-				Name:            otherName,
-				PluginChain:     otherPluginChain,
-				MultiGroup:      true,
-				ComponentConfig: true,
+			c2 = Cfg{
+				Version:     Version,
+				Domain:      otherDomain,
+				Repository:  otherRepo,
+				Name:        otherName,
+				PluginChain: otherPluginChain,
+				MultiGroup:  true,
 				Resources: []resource.Resource{
 					{
 						GVK: resource.GVK{
@@ -543,8 +519,7 @@ projectName: ProjectName
 repo: myrepo
 version: "3"
 `
-			s2 = `componentConfig: true
-domain: other.domain
+			s2 = `domain: other.domain
 layout:
 - go.kubebuilder.io/v3
 multigroup: true
@@ -592,7 +567,7 @@ version: "3"
 		)
 
 		DescribeTable("MarshalYAML should succeed",
-			func(c cfg, content string) {
+			func(c Cfg, content string) {
 				b, err := c.MarshalYAML()
 				Expect(err).NotTo(HaveOccurred())
 				Expect(string(b)).To(Equal(content))
@@ -601,17 +576,9 @@ version: "3"
 			Entry("for a full configuration", c2, s2),
 		)
 
-		DescribeTable("MarshalYAML should fail",
-			func(c cfg) {
-				_, err := c.MarshalYAML()
-				Expect(err).To(HaveOccurred())
-			},
-			// TODO (coverage): add cases where yaml.Marshal returns an error
-		)
-
 		DescribeTable("UnmarshalYAML should succeed",
-			func(content string, c cfg) {
-				var unmarshalled cfg
+			func(content string, c Cfg) {
+				var unmarshalled Cfg
 				Expect(unmarshalled.UnmarshalYAML([]byte(content))).To(Succeed())
 				Expect(unmarshalled.Version.Compare(c.Version)).To(Equal(0))
 				Expect(unmarshalled.Domain).To(Equal(c.Domain))
@@ -619,7 +586,6 @@ version: "3"
 				Expect(unmarshalled.Name).To(Equal(c.Name))
 				Expect(unmarshalled.PluginChain).To(Equal(c.PluginChain))
 				Expect(unmarshalled.MultiGroup).To(Equal(c.MultiGroup))
-				Expect(unmarshalled.ComponentConfig).To(Equal(c.ComponentConfig))
 				Expect(unmarshalled.Resources).To(Equal(c.Resources))
 				Expect(unmarshalled.Plugins).To(HaveLen(len(c.Plugins)))
 				// TODO: fully test Plugins field and not on its length
@@ -631,7 +597,7 @@ version: "3"
 
 		DescribeTable("UnmarshalYAML should fail",
 			func(content string) {
-				var c cfg
+				var c Cfg
 				Expect(c.UnmarshalYAML([]byte(content))).NotTo(Succeed())
 			},
 			Entry("for unknown fields", `field: 1

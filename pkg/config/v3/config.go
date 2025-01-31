@@ -1,5 +1,5 @@
 /*
-Copyright 2021 The Kubernetes Authors.
+Copyright 2022 The Kubernetes Authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -22,8 +22,8 @@ import (
 
 	"sigs.k8s.io/yaml"
 
-	"sigs.k8s.io/kubebuilder/v3/pkg/config"
-	"sigs.k8s.io/kubebuilder/v3/pkg/model/resource"
+	"sigs.k8s.io/kubebuilder/v4/pkg/config"
+	"sigs.k8s.io/kubebuilder/v4/pkg/model/resource"
 )
 
 // Version is the config.Version for project configuration 3
@@ -52,7 +52,8 @@ func (ss *stringSlice) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
-type cfg struct {
+// Cfg defines the Project Config (PROJECT file)
+type Cfg struct {
 	// Version
 	Version config.Version `json:"version"`
 
@@ -63,8 +64,7 @@ type cfg struct {
 	PluginChain stringSlice `json:"layout,omitempty"`
 
 	// Boolean fields
-	MultiGroup      bool `json:"multigroup,omitempty"`
-	ComponentConfig bool `json:"componentConfig,omitempty"`
+	MultiGroup bool `json:"multigroup,omitempty"`
 
 	// Resources
 	Resources []resource.Resource `json:"resources,omitempty"`
@@ -81,7 +81,7 @@ type pluginConfig interface{}
 
 // New returns a new config.Config
 func New() config.Config {
-	return &cfg{Version: Version}
+	return &Cfg{Version: Version}
 }
 
 func init() {
@@ -89,106 +89,91 @@ func init() {
 }
 
 // GetVersion implements config.Config
-func (c cfg) GetVersion() config.Version {
+func (c Cfg) GetVersion() config.Version {
 	return c.Version
 }
 
 // GetDomain implements config.Config
-func (c cfg) GetDomain() string {
+func (c Cfg) GetDomain() string {
 	return c.Domain
 }
 
 // SetDomain implements config.Config
-func (c *cfg) SetDomain(domain string) error {
+func (c *Cfg) SetDomain(domain string) error {
 	c.Domain = domain
 	return nil
 }
 
 // GetRepository implements config.Config
-func (c cfg) GetRepository() string {
+func (c Cfg) GetRepository() string {
 	return c.Repository
 }
 
 // SetRepository implements config.Config
-func (c *cfg) SetRepository(repository string) error {
+func (c *Cfg) SetRepository(repository string) error {
 	c.Repository = repository
 	return nil
 }
 
 // GetProjectName implements config.Config
-func (c cfg) GetProjectName() string {
+func (c Cfg) GetProjectName() string {
 	return c.Name
 }
 
 // SetProjectName implements config.Config
-func (c *cfg) SetProjectName(name string) error {
+func (c *Cfg) SetProjectName(name string) error {
 	c.Name = name
 	return nil
 }
 
-// GetLayout implements config.Config
-func (c cfg) GetPluginChain() []string {
+// GetPluginChain implements config.Config
+func (c Cfg) GetPluginChain() []string {
 	return c.PluginChain
 }
 
-// SetLayout implements config.Config
-func (c *cfg) SetPluginChain(pluginChain []string) error {
+// SetPluginChain implements config.Config
+func (c *Cfg) SetPluginChain(pluginChain []string) error {
 	c.PluginChain = pluginChain
 	return nil
 }
 
 // IsMultiGroup implements config.Config
-func (c cfg) IsMultiGroup() bool {
+func (c Cfg) IsMultiGroup() bool {
 	return c.MultiGroup
 }
 
 // SetMultiGroup implements config.Config
-func (c *cfg) SetMultiGroup() error {
+func (c *Cfg) SetMultiGroup() error {
 	c.MultiGroup = true
 	return nil
 }
 
 // ClearMultiGroup implements config.Config
-func (c *cfg) ClearMultiGroup() error {
+func (c *Cfg) ClearMultiGroup() error {
 	c.MultiGroup = false
 	return nil
 }
 
-// IsComponentConfig implements config.Config
-func (c cfg) IsComponentConfig() bool {
-	return c.ComponentConfig
-}
-
-// SetComponentConfig implements config.Config
-func (c *cfg) SetComponentConfig() error {
-	c.ComponentConfig = true
-	return nil
-}
-
-// ClearComponentConfig implements config.Config
-func (c *cfg) ClearComponentConfig() error {
-	c.ComponentConfig = false
-	return nil
-}
-
 // ResourcesLength implements config.Config
-func (c cfg) ResourcesLength() int {
+func (c Cfg) ResourcesLength() int {
 	return len(c.Resources)
 }
 
 // HasResource implements config.Config
-func (c cfg) HasResource(gvk resource.GVK) bool {
+func (c Cfg) HasResource(gvk resource.GVK) bool {
+	found := false
 	for _, res := range c.Resources {
 		if gvk.IsEqualTo(res.GVK) {
-			return true
+			found = true
+			break
 		}
 	}
 
-	return false
+	return found
 }
 
 // GetResource implements config.Config
-func (c cfg) GetResource(gvk resource.GVK) (resource.Resource, error) {
+func (c Cfg) GetResource(gvk resource.GVK) (resource.Resource, error) {
 	for _, res := range c.Resources {
 		if gvk.IsEqualTo(res.GVK) {
 			r := res.Copy()
@@ -206,7 +191,7 @@ func (c cfg) GetResource(gvk resource.GVK) (resource.Resource, error) {
 }
 
 // GetResources implements config.Config
-func (c cfg) GetResources() ([]resource.Resource, error) {
+func (c Cfg) GetResources() ([]resource.Resource, error) {
 	resources := make([]resource.Resource, 0, len(c.Resources))
 	for _, res := range c.Resources {
 		r := res.Copy()
@@ -223,7 +208,7 @@ func (c cfg) GetResources() ([]resource.Resource, error) {
 }
 
 // AddResource implements config.Config
-func (c *cfg) AddResource(res resource.Resource) error {
+func (c *Cfg) AddResource(res resource.Resource) error {
 	// As res is passed by value it is already a shallow copy, but we need to make a deep copy
 	res = res.Copy()
 
@@ -239,7 +224,7 @@ func (c *cfg) AddResource(res resource.Resource) error {
 }
 
 // UpdateResource implements config.Config
-func (c *cfg) UpdateResource(res resource.Resource) error {
+func (c *Cfg) UpdateResource(res resource.Resource) error {
 	// As res is passed by value it is already a shallow copy, but we need to make a deep copy
 	res = res.Copy()
 
@@ -259,7 +244,7 @@ func (c *cfg) UpdateResource(res resource.Resource) error {
 }
 
 // HasGroup implements config.Config
-func (c cfg) HasGroup(group string) bool {
+func (c Cfg) HasGroup(group string) bool {
 	// Return true if the target group is found in the tracked resources
 	for _, r := range c.Resources {
 		if strings.EqualFold(group, r.Group) {
@@ -272,7 +257,7 @@ func (c cfg) HasGroup(group string) bool {
 }
 
 // ListCRDVersions implements config.Config
-func (c cfg) ListCRDVersions() []string {
+func (c Cfg) ListCRDVersions() []string {
 	// Make a map to remove duplicates
 	versionSet := make(map[string]struct{})
 	for _, r := range c.Resources {
@@ -290,7 +275,7 @@ func (c cfg) ListCRDVersions() []string {
 }
 
 // ListWebhookVersions implements config.Config
-func (c cfg) ListWebhookVersions() []string {
+func (c Cfg) ListWebhookVersions() []string {
 	// Make a map to remove duplicates
 	versionSet := make(map[string]struct{})
 	for _, r := range c.Resources {
@@ -308,7 +293,7 @@ func (c cfg) ListWebhookVersions() []string {
 }
 
 // DecodePluginConfig implements config.Config
-func (c cfg) DecodePluginConfig(key string, configObj interface{}) error {
+func (c Cfg) DecodePluginConfig(key string, configObj interface{}) error {
 	if len(c.Plugins) == 0 {
 		return config.PluginKeyNotFoundError{Key: key}
 	}
@@ -329,7 +314,7 @@ func (c cfg) DecodePluginConfig(key string, configObj interface{}) error {
 }
 
 // EncodePluginConfig will return an error if used on any project version < v3.
-func (c *cfg) EncodePluginConfig(key string, configObj interface{}) error {
+func (c *Cfg) EncodePluginConfig(key string, configObj interface{}) error {
 	// Get object's bytes and set them under key in extra fields.
 	b, err := yaml.Marshal(configObj)
 	if err != nil {
@@ -346,8 +331,8 @@ func (c *cfg) EncodePluginConfig(key string, configObj interface{}) error {
 	return nil
 }
 
-// Marshal implements config.Config
-func (c cfg) MarshalYAML() ([]byte, error) {
+// MarshalYAML implements config.Config
+func (c Cfg) MarshalYAML() ([]byte, error) {
 	for i, r := range c.Resources {
 		// If API is empty, omit it (prevents `api: {}`).
 		if r.API != nil && r.API.IsEmpty() {
@@ -367,8 +352,8 @@ func (c cfg) MarshalYAML() ([]byte, error) {
 	return content, nil
 }
 
-// Unmarshal implements config.Config
-func (c *cfg) UnmarshalYAML(b []byte) error {
+// UnmarshalYAML implements config.Config
+func (c *Cfg) UnmarshalYAML(b []byte) error {
 	if err := yaml.UnmarshalStrict(b, c); err != nil {
 		return config.UnmarshalError{Err: err}
 	}

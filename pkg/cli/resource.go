@@ -1,5 +1,5 @@
 /*
-Copyright 2021 The Kubernetes Authors.
+Copyright 2022 The Kubernetes Authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -17,12 +17,12 @@ limitations under the License.
 package cli
 
 import (
-	"fmt"
+	"errors"
 	"strings"
 
 	"github.com/spf13/pflag"
 
-	"sigs.k8s.io/kubebuilder/v3/pkg/model/resource"
+	"sigs.k8s.io/kubebuilder/v4/pkg/model/resource"
 )
 
 const (
@@ -53,13 +53,13 @@ func (opts resourceOptions) validate() error {
 	// NOTE: We must do this for all the required flags first or we may output the wrong
 	// error as flags may seem to be missing because Cobra assigned them to another flag.
 	if strings.HasPrefix(opts.Group, "-") {
-		return fmt.Errorf(groupPresent)
+		return errors.New(groupPresent)
 	}
 	if strings.HasPrefix(opts.Version, "-") {
-		return fmt.Errorf(versionPresent)
+		return errors.New(versionPresent)
 	}
 	if strings.HasPrefix(opts.Kind, "-") {
-		return fmt.Errorf(kindPresent)
+		return errors.New(kindPresent)
 	}
 
 	// We do not check here if the GVK values are empty because that would

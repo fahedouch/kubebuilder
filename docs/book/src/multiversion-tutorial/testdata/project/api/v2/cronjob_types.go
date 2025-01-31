@@ -1,5 +1,5 @@
 /*
-Copyright 2021 The Kubernetes authors.
+Copyright 2025 The Kubernetes authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -20,12 +20,13 @@ Since we're in a v2 package, controller-gen will assume this is for the v2
 version automatically.  We could override that with the [`+versionName`
 marker](/reference/markers/crd.md).
 */
+
 package v2
 
 /*
  */
 import (
-	batchv1beta1 "k8s.io/api/batch/v1beta1"
+	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -38,7 +39,7 @@ import (
 /*
 We'll leave our spec largely unchanged, except to change the schedule field to a new type.
 */
-// CronJobSpec defines the desired state of CronJob
+// CronJobSpec defines the desired state of CronJob.
 type CronJobSpec struct {
 	// The schedule in Cron format, see https://en.wikipedia.org/wiki/Cron.
 	Schedule CronSchedule `json:"schedule"`
@@ -67,7 +68,7 @@ type CronJobSpec struct {
 	Suspend *bool `json:"suspend,omitempty"`
 
 	// Specifies the job that will be created when executing a CronJob.
-	JobTemplate batchv1beta1.JobTemplateSpec `json:"jobTemplate"`
+	JobTemplate batchv1.JobTemplateSpec `json:"jobTemplate"`
 
 	// +kubebuilder:validation:Minimum=0
 
@@ -83,7 +84,8 @@ type CronJobSpec struct {
 	// +optional
 	FailedJobsHistoryLimit *int32 `json:"failedJobsHistoryLimit,omitempty"`
 
-	//+kubebuilder:docs-gen:collapse=The rest of Spec
+	// +kubebuilder:docs-gen:collapse=The rest of Spec
+
 }
 
 /*
@@ -157,10 +159,10 @@ type CronJobStatus struct {
 	LastScheduleTime *metav1.Time `json:"lastScheduleTime,omitempty"`
 }
 
-//+kubebuilder:object:root=true
-//+kubebuilder:subresource:status
-
-// CronJob is the Schema for the cronjobs API
+// +kubebuilder:object:root=true
+// +kubebuilder:subresource:status
+// +versionName=v2
+// CronJob is the Schema for the cronjobs API.
 type CronJob struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
@@ -169,9 +171,9 @@ type CronJob struct {
 	Status CronJobStatus `json:"status,omitempty"`
 }
 
-//+kubebuilder:object:root=true
+// +kubebuilder:object:root=true
 
-// CronJobList contains a list of CronJob
+// CronJobList contains a list of CronJob.
 type CronJobList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
