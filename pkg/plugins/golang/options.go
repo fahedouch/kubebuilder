@@ -1,5 +1,5 @@
 /*
-Copyright 2021 The Kubernetes Authors.
+Copyright 2022 The Kubernetes Authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -19,9 +19,8 @@ package golang
 import (
 	"path"
 
-	"sigs.k8s.io/kubebuilder/v3/pkg/config"
-	cfgv2 "sigs.k8s.io/kubebuilder/v3/pkg/config/v2"
-	"sigs.k8s.io/kubebuilder/v3/pkg/model/resource"
+	"sigs.k8s.io/kubebuilder/v4/pkg/config"
+	"sigs.k8s.io/kubebuilder/v4/pkg/model/resource"
 )
 
 var (
@@ -57,10 +56,12 @@ type Options struct {
 	// Plural is the resource's kind plural form.
 	Plural string
 
-	// CRDVersion is the CustomResourceDefinition API version that will be used for the resource.
-	CRDVersion string
-	// WebhookVersion is the {Validating,Mutating}WebhookConfiguration API version that will be used for the resource.
-	WebhookVersion string
+	// ExternalAPIPath allows to inform a path for APIs not defined in the project
+	ExternalAPIPath string
+
+	// ExternalAPIPath allows to inform the resource domain to build the Qualified Group
+	// to generate the RBAC markers
+	ExternalAPIDomain string
 
 	// Namespaced is true if the resource should be namespaced.
 	Namespaced bool
@@ -71,6 +72,9 @@ type Options struct {
 	DoDefaulting bool
 	DoValidation bool
 	DoConversion bool
+
+	// Spoke versions for conversion webhook
+	Spoke []string
 }
 
 // UpdateResource updates the provided resource with the options
@@ -81,10 +85,12 @@ func (opts Options) UpdateResource(res *resource.Resource, c config.Config) {
 
 	if opts.DoAPI {
 		res.Path = resource.APIPackagePath(c.GetRepository(), res.Group, res.Version, c.IsMultiGroup())
+
 		res.API = &resource.API{
-			CRDVersion: opts.CRDVersion,
+			CRDVersion: "v1",
 			Namespaced: opts.Namespaced,
 		}
+
 	}
 
 	if opts.DoController {
@@ -93,7 +99,8 @@ func (opts Options) UpdateResource(res *resource.Resource, c config.Config) {
 
 	if opts.DoDefaulting || opts.DoValidation || opts.DoConversion {
 		res.Path = resource.APIPackagePath(c.GetRepository(), res.Group, res.Version, c.IsMultiGroup())
-		res.Webhooks.WebhookVersion = opts.WebhookVersion
+
+		res.Webhooks.WebhookVersion = "v1"
 		if opts.DoDefaulting {
 			res.Webhooks.Defaulting = true
 		}
@@ -102,7 +109,12 @@ func (opts Options) UpdateResource(res *resource.Resource, c config.Config) {
 		}
 		if opts.DoConversion {
 			res.Webhooks.Conversion = true
+			res.Webhooks.Spoke = opts.Spoke
 		}
+	}
+
+	if len(opts.ExternalAPIPath) > 0 {
+		res.External = true
 	}
 
 	// domain and path may need to be changed in case we are referring to a builtin core resource:
@@ -110,19 +122,21 @@ func (opts Options) UpdateResource(res *resource.Resource, c config.Config) {
 	//  - Check if we already scaffolded the resource            => project resource
 	//  - Check if the resource group is a well-known core group => builtin core resource
 	//  - In any other case, default to                          => project resource
-	// TODO: need to support '--resource-pkg-path' flag for specifying resourcePath
 	if !opts.DoAPI {
 		var alreadyHasAPI bool
-		if c.GetVersion().Compare(cfgv2.Version) == 0 {
-			alreadyHasAPI = c.HasResource(res.GVK)
-		} else {
-			loadedRes, err := c.GetResource(res.GVK)
-			alreadyHasAPI = err == nil && loadedRes.HasAPI()
-		}
+		loadedRes, err := c.GetResource(res.GVK)
+		alreadyHasAPI = err == nil && loadedRes.HasAPI()
 		if !alreadyHasAPI {
-			if domain, found := coreGroups[res.Group]; found {
-				res.Domain = domain
-				res.Path = path.Join("k8s.io", "api", res.Group, res.Version)
+			if res.External {
+				res.Path = opts.ExternalAPIPath
+				res.Domain = opts.ExternalAPIDomain
+			} else {
+				// Handle core types
+				if domain, found := coreGroups[res.Group]; found {
+					res.Core = true
+					res.Domain = domain
+					res.Path = path.Join("k8s.io", "api", res.Group, res.Version)
+				}
 			}
 		}
 	}

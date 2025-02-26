@@ -22,7 +22,7 @@ import (
 	"strconv"
 	"strings"
 
-	"sigs.k8s.io/kubebuilder/v3/pkg/model/stage"
+	"sigs.k8s.io/kubebuilder/v4/pkg/model/stage"
 )
 
 var (
@@ -50,7 +50,7 @@ func (v *Version) Parse(version string) error {
 
 	var err error
 	if v.Number, err = strconv.Atoi(substrings[0]); err != nil {
-		// Lets check if the `-` belonged to a negative number
+		// Let's check if the `-` belonged to a negative number
 		if n, err := strconv.Atoi(version); err == nil && n < 0 {
 			return errNegative
 		}

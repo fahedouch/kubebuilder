@@ -38,9 +38,9 @@ import (
 By default, kubebuilder will include the RBAC rules necessary to update finalizers for CronJobs.
 */
 
-//+kubebuilder:rbac:groups=batch.tutorial.kubebuilder.io,resources=cronjobs,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:groups=batch.tutorial.kubebuilder.io,resources=cronjobs/status,verbs=get;update;patch
-//+kubebuilder:rbac:groups=batch.tutorial.kubebuilder.io,resources=cronjobs/finalizers,verbs=update
+// +kubebuilder:rbac:groups=batch.tutorial.kubebuilder.io,resources=cronjobs,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=batch.tutorial.kubebuilder.io,resources=cronjobs/status,verbs=get;update;patch
+// +kubebuilder:rbac:groups=batch.tutorial.kubebuilder.io,resources=cronjobs/finalizers,verbs=update
 
 /*
 The code snippet below shows skeleton code for implementing a finalizer.
@@ -49,7 +49,7 @@ The code snippet below shows skeleton code for implementing a finalizer.
 func (r *CronJobReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	log := r.Log.WithValues("cronjob", req.NamespacedName)
 
-	var cronJob *batchv1.CronJob
+	cronJob := &batchv1.CronJob{}
 	if err := r.Get(ctx, req.NamespacedName, cronJob); err != nil {
 		log.Error(err, "unable to fetch CronJob")
 		// we'll ignore not-found errors, since they can't be fixed by an immediate
@@ -64,9 +64,9 @@ func (r *CronJobReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 	// examine DeletionTimestamp to determine if object is under deletion
 	if cronJob.ObjectMeta.DeletionTimestamp.IsZero() {
 		// The object is not being deleted, so if it does not have our finalizer,
-		// then lets add the finalizer and update the object. This is equivalent
-		// registering our finalizer.
-		if !containsString(cronJob.GetFinalizers(), myFinalizerName) {
+		// then let's add the finalizer and update the object. This is equivalent
+		// to registering our finalizer.
+		if !controllerutil.ContainsFinalizer(cronJob, myFinalizerName) {
 			controllerutil.AddFinalizer(cronJob, myFinalizerName)
 			if err := r.Update(ctx, cronJob); err != nil {
 				return ctrl.Result{}, err
@@ -74,11 +74,11 @@ func (r *CronJobReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		}
 	} else {
 		// The object is being deleted
-		if containsString(cronJob.GetFinalizers(), myFinalizerName) {
-			// our finalizer is present, so lets handle any external dependency
+		if controllerutil.ContainsFinalizer(cronJob, myFinalizerName) {
+			// our finalizer is present, so let's handle any external dependency
 			if err := r.deleteExternalResources(cronJob); err != nil {
 				// if fail to delete the external dependency here, return with error
-				// so that it can be retried
+				// so that it can be retried.
 				return ctrl.Result{}, err
 			}
 
@@ -104,24 +104,4 @@ func (r *Reconciler) deleteExternalResources(cronJob *batch.CronJob) error {
 	//
 	// Ensure that delete implementation is idempotent and safe to invoke
 	// multiple times for same object.
-}
-
-// Helper functions to check and remove string from a slice of strings.
-func containsString(slice []string, s string) bool {
-	for _, item := range slice {
-		if item == s {
-			return true
-		}
-	}
-	return false
-}
-
-func removeString(slice []string, s string) (result []string) {
-	for _, item := range slice {
-		if item == s {
-			continue
-		}
-		result = append(result, item)
-	}
-	return
 }

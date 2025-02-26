@@ -14,6 +14,33 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+# Not every exact cluster version has an equal tools version, and visa versa.
+# This function returns the exact tools version for a k8s version based on its minor.
+function convert_to_tools_ver {
+  local k8s_ver=${1:?"k8s version must be set to arg 1"}
+  local maj_min=$(echo $k8s_ver | grep -oE '^[0-9]+\.[0-9]+')
+  case $maj_min in
+  # 1.14-1.19 work with the 1.19 server bins and kubectl.
+  "1.14"|"1.15"|"1.16"|"1.17"|"1.18"|"1.19") echo "1.19.2";;
+  # Tests in 1.20 and 1.21 with their counterpart version's apiserver.
+  "1.20"|"1.21") echo "1.21.5";;
+  "1.22") echo "1.22.1";;
+  "1.23") echo "1.23.3";;
+  "1.24") echo "1.24.1";;
+  "1.25") echo "1.25.0";;
+  "1.26") echo "1.26.0";;
+  "1.27") echo "1.27.1";;
+  "1.28") echo "1.28.3";;
+  "1.29") echo "1.29.0";;
+  "1.30") echo "1.30.0";;
+  "1.31") echo "1.31.0";;
+  "1.32") echo "1.32.0";;
+  *)
+    echo "k8s version $k8s_ver not supported"
+    exit 1
+  esac
+}
+
 set -o errexit
 set -o nounset
 set -o pipefail
@@ -27,7 +54,9 @@ if [ -n "$TRACE" ]; then
   set -x
 fi
 
-k8s_version=1.16.4
+export KIND_K8S_VERSION="${KIND_K8S_VERSION:-"v1.31.0"}"
+tools_k8s_version=$(convert_to_tools_ver "${KIND_K8S_VERSION#v*}")
+kind_version=0.22.0
 goarch=amd64
 
 if [[ "$OSTYPE" == "linux-gnu" ]]; then
@@ -58,8 +87,14 @@ function header_text {
   echo "$header$*$reset"
 }
 
+# Certain tools are installed to GOBIN.
+export PATH="$(go env GOPATH)/bin:${PATH}"
+
+# Kubebuilder's bin path should be the last added to PATH such that it is preferred.
 tmp_root=/tmp
 kb_root_dir=$tmp_root/kubebuilder
+mkdir -p "$kb_root_dir"
+export PATH="${kb_root_dir}/bin:${PATH}"
 
 # Skip fetching and untaring the tools by setting the SKIP_FETCH_TOOLS variable
 # in your environment to any value:
@@ -70,49 +105,49 @@ kb_root_dir=$tmp_root/kubebuilder
 # machine, but rebuild the kubebuilder and kubebuilder-bin binaries.
 SKIP_FETCH_TOOLS=${SKIP_FETCH_TOOLS:-""}
 
-# Remove previously built binary and fetched tools if they need to be fetched again
-function prepare_staging_dir {
-  header_text "Preparing staging dir"
-
-  if [ -z "$SKIP_FETCH_TOOLS" ]; then
-    rm -rf "$kb_root_dir"
-  else
-    rm -f "$kb_root_dir/bin/kubebuilder"
-  fi
-}
-
 # Build kubebuilder
 function build_kb {
   header_text "Building kubebuilder"
-  go build -o $kb_root_dir/bin/kubebuilder ./cmd
-  kb=$kb_root_dir/bin/kubebuilder
+
+  go build -o "${kb_root_dir}/bin/kubebuilder"
+  kb="${kb_root_dir}/bin/kubebuilder"
 }
 
-# Fetch k8s API gen tools and make it available under kb_root_dir/bin.
+# Fetch k8s API tools and manage them globally with setup-envtest.
 function fetch_tools {
-  if [ -z "$SKIP_FETCH_TOOLS" ]; then
-    header_text "Fetching kb tools"
-    kb_tools_archive_name="kubebuilder-tools-$k8s_version-$goos-$goarch.tar.gz"
-    kb_tools_download_url="https://storage.googleapis.com/kubebuilder-tools/$kb_tools_archive_name"
+  if ! is_installed setup-envtest; then
+    header_text "Installing setup-envtest to $(go env GOPATH)/bin"
 
-    kb_tools_archive_path="$tmp_root/$kb_tools_archive_name"
-    if [ ! -f $kb_tools_archive_path ]; then
-      curl -sL ${kb_tools_download_url} -o "$kb_tools_archive_path"
-    fi
-    tar -zvxf "$kb_tools_archive_path" -C "$tmp_root/"
+    # TODO: Current workaround for setup-envtest compatibility
+    # Due to past instances where controller-runtime maintainers released
+    # versions without corresponding branches, directly relying on branches
+    # poses a risk of breaking the Kubebuilder chain. Such practices may
+    # change over time, potentially leading to compatibility issues. This
+    # approach, although not ideal, remains the best solution for ensuring
+    # compatibility with controller-runtime releases as of now. For more
+    # details on the quest for a more robust solution, refer to the issue
+    # raised in the controller-runtime repository: https://github.com/kubernetes-sigs/controller-runtime/issues/2744
+    go install sigs.k8s.io/controller-runtime/tools/setup-envtest@release-0.20
   fi
 
-  export KUBEBUILDER_ASSETS=$kb_root_dir/bin/
+  if [ -z "$SKIP_FETCH_TOOLS" ]; then
+    header_text "Installing e2e tools with setup-envtest"
+
+    setup-envtest use $tools_k8s_version
+  fi
+
+  # Export KUBEBUILDER_ASSETS.
+  eval $(setup-envtest use -i -p env $tools_k8s_version)
+  # Downloaded tools should be used instead of counterparts present in the environment.
+  export PATH="${KUBEBUILDER_ASSETS}:${PATH}"
 }
 
-# Installing kind in a temporal dir if no previously installed
+# Installing kind in a temporal dir if no previously installed to GOBIN.
 function install_kind {
-  header_text "Checking if kind is installed"
   if ! is_installed kind ; then
-    header_text "Kind not found, installing kind"
-    pushd $(mktemp -d)
-    GO111MODULE=on go get sigs.k8s.io/kind@v0.7.0
-    popd
+    header_text "Installing kind to $(go env GOPATH)/bin"
+
+    go install sigs.k8s.io/kind@v$kind_version
   fi
 }
 
@@ -122,4 +157,14 @@ function is_installed {
     return 0
   fi
   return 1
+}
+
+function listPkgDirs() {
+	go list -f '{{.Dir}}' ./... | grep -v generated
+}
+
+#Lists all go files
+function listFiles() {
+	# pipeline is much faster than for loop
+	listPkgDirs | xargs -I {} find {} \( -name '*.go' -o -name '*.sh' \)  | grep -v generated
 }

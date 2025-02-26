@@ -1,5 +1,5 @@
 /*
-Copyright 2021 The Kubernetes Authors.
+Copyright 2022 The Kubernetes Authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -19,7 +19,7 @@ package plugin
 import (
 	"fmt"
 
-	"sigs.k8s.io/kubebuilder/v3/pkg/config"
+	"sigs.k8s.io/kubebuilder/v4/pkg/config"
 )
 
 type bundle struct {
@@ -28,12 +28,51 @@ type bundle struct {
 	plugins []Plugin
 
 	supportedProjectVersions []config.Version
+	deprecateWarning         string
 }
 
-// NewBundle creates a new Bundle with the provided name and version, and that wraps the provided plugins.
-// The list of supported project versions is computed from the provided plugins.
-func NewBundle(name string, version Version, plugins ...Plugin) (Bundle, error) {
-	supportedProjectVersions := CommonSupportedProjectVersions(plugins...)
+// BundleOption define the options to create the bundle
+type BundleOption func(*bundle)
+
+// WithName allow set the name of the Bundle Plugin
+func WithName(name string) BundleOption {
+	return func(opts *bundle) {
+		opts.name = name
+	}
+}
+
+// WithVersion allow set the version of the Bundle Plugin
+func WithVersion(version Version) BundleOption {
+	return func(opts *bundle) {
+		opts.version = version
+	}
+}
+
+// WithPlugins allow set the plugins which will be used in the composition for the Bundle Plugin
+func WithPlugins(plugins ...Plugin) BundleOption {
+	return func(opts *bundle) {
+		opts.plugins = plugins
+	}
+}
+
+// WithDeprecationMessage allow set a deprecate message when needed
+func WithDeprecationMessage(msg string) BundleOption {
+	return func(opts *bundle) {
+		opts.deprecateWarning = msg
+	}
+
+}
+
+// NewBundleWithOptions creates a new Bundle with the provided BundleOptions.
+// The list of supported project versions is computed from the provided plugins in options.
+func NewBundleWithOptions(opts ...BundleOption) (Bundle, error) {
+	bundleOpts := bundle{}
+
+	for _, opts := range opts {
+		opts(&bundleOpts)
+	}
+
+	supportedProjectVersions := CommonSupportedProjectVersions(bundleOpts.plugins...)
 	if len(supportedProjectVersions) == 0 {
 		return nil, fmt.Errorf("in order to bundle plugins, they must all support at least one common project version")
 	}
@@ -41,8 +80,8 @@ func NewBundle(name string, version Version, plugins ...Plugin) (Bundle, error) 
 	// Plugins may be bundles themselves, so unbundle here
 	// NOTE(Adirio): unbundling here ensures that Bundle.Plugin always returns a flat list of Plugins instead of also
 	//               including Bundles, and therefore we don't have to use a recursive algorithm when resolving.
-	allPlugins := make([]Plugin, 0, len(plugins))
-	for _, plugin := range plugins {
+	allPlugins := make([]Plugin, 0, len(bundleOpts.plugins))
+	for _, plugin := range bundleOpts.plugins {
 		if pluginBundle, isBundle := plugin.(Bundle); isBundle {
 			allPlugins = append(allPlugins, pluginBundle.Plugins()...)
 		} else {
@@ -51,10 +90,11 @@ func NewBundle(name string, version Version, plugins ...Plugin) (Bundle, error) 
 	}
 
 	return bundle{
-		name:                     name,
-		version:                  version,
+		name:                     bundleOpts.name,
+		version:                  bundleOpts.version,
 		plugins:                  allPlugins,
 		supportedProjectVersions: supportedProjectVersions,
+		deprecateWarning:         bundleOpts.deprecateWarning,
 	}, nil
 }
 
@@ -76,4 +116,9 @@ func (b bundle) SupportedProjectVersions() []config.Version {
 // Plugins implements Bundle
 func (b bundle) Plugins() []Plugin {
 	return b.plugins
+}
+
+// DeprecationWarning return the warning message
+func (b bundle) DeprecationWarning() string {
+	return b.deprecateWarning
 }

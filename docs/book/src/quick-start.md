@@ -9,19 +9,15 @@ This Quick Start guide will cover:
 
 ## Prerequisites
 
-- [go](https://golang.org/dl/) version v1.15+ and < 1.16.
+- [go](https://go.dev/dl/) version v1.23.0+
 - [docker](https://docs.docker.com/install/) version 17.03+.
 - [kubectl](https://kubernetes.io/docs/tasks/tools/install-kubectl/) version v1.11.3+.
 - Access to a Kubernetes v1.11.3+ cluster.
 
 <aside class="note">
-<h1>Versions and Supportability</h1>
+<h1>Versions Compatibility and Supportability</h1>
 
-Projects created by Kubebuilder contain a Makefile that will install tools at versions defined at creation time. Those tools are:
-- [kustomize](https://kubernetes-sigs.github.io/kustomize/)
-- [controller-gen](https://github.com/kubernetes-sigs/controller-tools)
-
-The versions which are defined in the `Makefile` and `go.mod` files are the versions tested and therefore is recommend to use the specified versions.
+Please, ensure that you see the [guidance](./versions_compatibility_supportability.md).
 
 </aside>
 
@@ -31,21 +27,22 @@ Install [kubebuilder](https://sigs.k8s.io/kubebuilder):
 
 ```bash
 # download kubebuilder and install locally.
-curl -L -o kubebuilder https://go.kubebuilder.io/dl/latest/$(go env GOOS)/$(go env GOARCH)
-chmod +x kubebuilder && mv kubebuilder /usr/local/bin/
+curl -L -o kubebuilder "https://go.kubebuilder.io/dl/latest/$(go env GOOS)/$(go env GOARCH)"
+chmod +x kubebuilder && sudo mv kubebuilder /usr/local/bin/
 ```
 
 <aside class="note">
-<h1>Using master branch</h1>
+<h1>Using the Master Branch</h1>
 
-You can work with a master snapshot by installing from `https://go.kubebuilder.io/dl/master/$(go env GOOS)/$(go env GOARCH)`.
+You can work with the master branch by cloning the repository and running `make install` to generate the binary.
+Please follow the steps in the section **How to Build Kubebuilder Locally** from the [Contributing Guide](https://github.com/kubernetes-sigs/kubebuilder/blob/master/CONTRIBUTING.md#how-to-build-kubebuilder-locally).
 
 </aside>
 
 <aside class="note">
 <h1>Enabling shell autocompletion</h1>
 
-Kubebuilder provides autocompletion support for Bash and Zsh via the command `kubebuilder completion <bash|zsh>`, which can save you a lot of typing. For further information see the [completion](./reference/completion.md) document.
+Kubebuilder provides autocompletion support via the command `kubebuilder completion <bash|fish|powershell|zsh>`, which can save you a lot of typing. For further information see the [completion](./reference/completion.md) document.
 
 </aside>
 
@@ -82,7 +79,7 @@ kubebuilder create api --group webapp --version v1 --kind Guestbook
 <h1>Press Options</h1>
 
 If you press `y` for Create Resource [y/n] and for Create Controller [y/n] then this will create the files `api/v1/guestbook_types.go` where the API is defined
-and the `controllers/guestbook_controller.go` where the reconciliation business logic is implemented for this Kind(CRD).
+and the `internal/controllers/guestbook_controller.go` where the reconciliation business logic is implemented for this Kind(CRD).
 
 </aside>
 
@@ -91,7 +88,12 @@ and the `controllers/guestbook_controller.go` where the reconciliation business 
 logic. For more info see [Designing an API](/cronjob-tutorial/api-design.md) and [What's in
 a Controller](cronjob-tutorial/controller-overview.md).
 
-<details><summary>Click here to see an example. `(api/v1/guestbook_types.go)` </summary>
+If you are editing the API definitions, generate the manifests such as Custom Resources (CRs) or Custom Resource Definitions (CRDs) using
+```bash
+make manifests
+```
+
+<details><summary>Click here to see an example. <tt>(api/v1/guestbook_types.go)</tt></summary>
 <p>
 
 ```go
@@ -163,7 +165,7 @@ Install the CRDs into the cluster:
 make install
 ```
 
-Run your controller (this will run in the foreground, so switch to a new
+For quick feedback and code-level debugging, run your controller (this will run in the foreground, so switch to a new
 terminal if you want to leave it running):
 ```bash
 make run
@@ -171,14 +173,15 @@ make run
 
 ## Install Instances of Custom Resources
 
-If you pressed `y` for Create Resource [y/n] then you created an (CR)Custom Resource for your (CRD)Custom Resource Definition in your samples (make sure to edit them first if you've changed the
+If you pressed `y` for Create Resource [y/n] then you created a CR for your CRD in your samples (make sure to edit them first if you've changed the
 API definition):
 
 ```bash
-kubectl apply -f config/samples/
+kubectl apply -k config/samples/
 ```
 
 ## Run It On the Cluster
+When your controller is ready to be packaged and tested in other clusters.
 
 Build and push your image to the location specified by `IMG`:
 
@@ -193,10 +196,25 @@ make deploy IMG=<some-registry>/<project-name>:tag
 ```
 
 <aside class="note">
+<h1>Registry Permission</h1>
+
+This image ought to be published in the personal registry you specified. And it is required to have access to pull the image from the working environment.
+Make sure you have the proper permission to the registry if the above commands don't work.
+
+Consider incorporating Kind into your workflow for a faster, more efficient local development and CI experience.
+Note that, if you're using a Kind cluster, there's no need to push your image to a remote container registry.
+You can directly load your local image into your specified Kind cluster:
+
+```bash
+kind load docker-image <your-image-name>:tag --name <your-kind-cluster-name>
+```
+
+To know more, see: [Using Kind For Development Purposes and CI](./reference/kind.md)
+
 <h1>RBAC errors</h1>
 
 If you encounter RBAC errors, you may need to grant yourself cluster-admin
-privileges or be logged in as admin. See [Prerequisites for using Kubernetes RBAC on GKE cluster v1.11.x and older][pre-rbc-gke] which may be your case.  
+privileges or be logged in as admin. See [Prerequisites for using Kubernetes RBAC on GKE cluster v1.11.x and older][pre-rbc-gke] which may be your case.
 
 </aside>
 
@@ -210,7 +228,7 @@ make uninstall
 
 ## Undeploy controller
 
-UnDeploy the controller to the cluster:
+Undeploy the controller to the cluster:
 
 ```bash
 make undeploy
@@ -218,11 +236,16 @@ make undeploy
 
 ## Next Step
 
-Now, see the [architecture concept diagram][architecture-concept-diagram] for a better overview and follow up the [CronJob tutorial][cronjob-tutorial] to better understand how it works by developing a demo example project.
+- Now, take a look at the [Architecture Concept Diagram][architecture-concept-diagram] for a clearer overview.
+- Next, proceed with the [Getting Started Guide][getting-started], which should take no more than 30 minutes and will
+provide a solid foundation. Afterward, dive into the [CronJob Tutorial][cronjob-tutorial] to deepen your
+understanding by developing a demo project.
 
 [pre-rbc-gke]: https://cloud.google.com/kubernetes-engine/docs/how-to/role-based-access-control#iam-rolebinding-bootstrap
 [cronjob-tutorial]: https://book.kubebuilder.io/cronjob-tutorial/cronjob-tutorial.html
-[GOPATH-golang-docs]: https://golang.org/doc/code.html#GOPATH
-[go-modules-blogpost]: https://blog.golang.org/using-go-modules
+[GOPATH-golang-docs]: https://go.dev/doc/code.html#GOPATH
+[go-modules-blogpost]: https://blog.go.dev/using-go-modules
 [envtest]: https://book.kubebuilder.io/reference/testing/envtest.html
 [architecture-concept-diagram]: architecture.md
+[kustomize]: https://github.com/kubernetes-sigs/kustomize
+[getting-started]: getting-started.md

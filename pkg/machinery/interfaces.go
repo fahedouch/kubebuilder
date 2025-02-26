@@ -19,7 +19,7 @@ package machinery
 import (
 	"text/template"
 
-	"sigs.k8s.io/kubebuilder/v3/pkg/model/resource"
+	"sigs.k8s.io/kubebuilder/v4/pkg/model/resource"
 )
 
 // Builder defines the basic methods that any file builder must implement
@@ -44,6 +44,10 @@ type Template interface {
 	GetBody() string
 	// SetTemplateDefaults sets the default values for templates
 	SetTemplateDefaults() error
+	// SetDelim sets an action delimiters to replace default delimiters: {{ }}
+	SetDelim(left, right string)
+	// GetDelim returns the alternative delimiters
+	GetDelim() (string, string)
 }
 
 // Inserter is a file builder that inserts code fragments in marked positions
@@ -77,12 +81,6 @@ type HasProjectName interface {
 type HasMultiGroup interface {
 	// InjectMultiGroup sets the template multi-group flag
 	InjectMultiGroup(bool)
-}
-
-// HasComponentConfig allows the component-config flag to be used on a template
-type HasComponentConfig interface {
-	// InjectComponentConfig sets the template component-config flag
-	InjectComponentConfig(bool)
 }
 
 // HasBoilerplate allows a boilerplate to be used on a template

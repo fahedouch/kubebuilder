@@ -1,5 +1,5 @@
 /*
-Copyright 2021 The Kubernetes Authors.
+Copyright 2022 The Kubernetes Authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -17,8 +17,8 @@ limitations under the License.
 package machinery
 
 import (
-	"sigs.k8s.io/kubebuilder/v3/pkg/config"
-	"sigs.k8s.io/kubebuilder/v3/pkg/model/resource"
+	"sigs.k8s.io/kubebuilder/v4/pkg/config"
+	"sigs.k8s.io/kubebuilder/v4/pkg/model/resource"
 )
 
 // injector is used to inject certain fields to file templates.
@@ -48,9 +48,6 @@ func (i injector) injectInto(builder Builder) {
 		}
 		if builderWithMultiGroup, hasMultiGroup := builder.(HasMultiGroup); hasMultiGroup {
 			builderWithMultiGroup.InjectMultiGroup(i.config.IsMultiGroup())
-		}
-		if builderWithComponentConfig, hasComponentConfig := builder.(HasComponentConfig); hasComponentConfig {
-			builderWithComponentConfig.InjectComponentConfig(i.config.IsComponentConfig())
 		}
 	}
 	// Inject boilerplate

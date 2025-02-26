@@ -9,7 +9,7 @@ building up to something pretty full-featured.
 Let's pretend (and sure, this is a teensy bit contrived) that we've
 finally gotten tired of the maintenance burden of the non-Kubebuilder
 implementation of the CronJob controller in Kubernetes, and we'd like to
-rewrite it using KubeBuilder.
+rewrite it using Kubebuilder.
 
 The job (no pun intended) of the *CronJob* controller is to run one-off
 tasks on the Kubernetes cluster at regular intervals.  It does this by
@@ -44,15 +44,34 @@ Kubebuilder](../quick-start.md#installation), then scaffold out a new
 project:
 
 ```bash
+# create a project directory, and then run the init command.
+mkdir project
+cd project
 # we'll use a domain of tutorial.kubebuilder.io,
 # so all API groups will be <group>.tutorial.kubebuilder.io.
-kubebuilder init --domain tutorial.kubebuilder.io
+kubebuilder init --domain tutorial.kubebuilder.io --repo tutorial.kubebuilder.io/project
 ```
 
 <aside class="note">
+
 Your project's name defaults to that of your current working directory.
 You can pass `--project-name=<dns1123-label-string>` to set a different project name.
+
 </aside>
 
 Now that we've got a project in place, let's take a look at what
 Kubebuilder has scaffolded for us so far...
+
+<aside class="note">
+
+<h1>Developing in <code>$GOPATH</code></h1>
+
+If your project is initialized within [`GOPATH`][GOPATH-golang-docs], the implicitly called `go mod init` will interpolate the module path for you.
+Otherwise `--repo=<module path>` must be set.
+
+Read the [Go modules blogpost][go-modules-blogpost] if unfamiliar with the module system.
+
+</aside>
+
+[GOPATH-golang-docs]: https://golang.org/doc/code.html#GOPATH
+[go-modules-blogpost]: https://blog.golang.org/using-go-modules

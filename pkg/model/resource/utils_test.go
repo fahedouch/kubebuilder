@@ -1,5 +1,5 @@
 /*
-Copyright 2021 The Kubernetes Authors.
+Copyright 2022 The Kubernetes Authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -19,8 +19,7 @@ package resource
 import (
 	"path"
 
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/ginkgo/extensions/table"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
 
@@ -46,8 +45,8 @@ var _ = Describe("APIPackagePath", func() {
 			Expect(APIPackagePath(repo, group, version, multiGroup)).To(Equal(p))
 		},
 		Entry("single group setup", repo, group, version, false, path.Join(repo, "api", version)),
-		Entry("multiple group setup", repo, group, version, true, path.Join(repo, "apis", group, version)),
-		Entry("multiple group setup with empty group", repo, "", version, true, path.Join(repo, "apis", version)),
+		Entry("multiple group setup", repo, group, version, true, path.Join(repo, "api", group, version)),
+		Entry("multiple group setup with empty group", repo, "", version, true, path.Join(repo, "api", version)),
 	)
 })
 

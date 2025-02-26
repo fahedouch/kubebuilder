@@ -16,6 +16,8 @@
 # Make sure to check the documentation at http://goreleaser.com
 
 # Global environment variables that are needed for hooks and builds.
+version: 2
+
 env:
   - GO111MODULE=on
 
@@ -27,23 +29,24 @@ before:
 # Build a binary for each target in targets.
 builds:
   - id: kubebuilder
-    main: ./cmd
     binary: kubebuilder
     mod_timestamp: "{{ .CommitTimestamp }}"
     ldflags:
-      - -X main.kubeBuilderVersion={{ .Version }}
-      - -X main.goos={{ .Os }}
-      - -X main.goarch={{ .Arch }}
-      - -X main.gitCommit={{ .Commit }}
-      - -X main.buildDate={{ .Date }}
-      - -X main.kubernetesVendorVersion={{ .Env.KUBERNETES_VERSION }}
+      - -X sigs.k8s.io/kubebuilder/v4/cmd.kubeBuilderVersion={{ .Version }}
+      - -X sigs.k8s.io/kubebuilder/v4/cmd.goos={{ .Os }}
+      - -X sigs.k8s.io/kubebuilder/v4/cmd.goarch={{ .Arch }}
+      - -X sigs.k8s.io/kubebuilder/v4/cmd.gitCommit={{ .Commit }}
+      - -X sigs.k8s.io/kubebuilder/v4/cmd.buildDate={{ .Date }}
+      - -X sigs.k8s.io/kubebuilder/v4/cmd.kubernetesVendorVersion={{ .Env.KUBERNETES_VERSION }}
     targets:
       - linux_amd64
       - linux_arm64
       - linux_ppc64le
+      - linux_s390x
       - darwin_amd64
+      - darwin_arm64
     env:
-      - KUBERNETES_VERSION=1.19.2
+      - KUBERNETES_VERSION=1.32.1
       - CGO_ENABLED=0
 
 # Only binaries of the form "kubebuilder_${goos}_${goarch}" will be released.
@@ -64,3 +67,12 @@ release:
   github:
     owner: kubernetes-sigs
     name: kubebuilder
+
+# Add the SBOM configuration at the end to generate SBOM files
+sboms:
+  - id: kubebuilder-sbom
+    artifacts: binary
+    cmd: syft
+    args: ["$artifact", "--output", "cyclonedx-json=$document"]
+    documents:
+      - "{{ .Binary }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}.cyclonedx.sbom.json"

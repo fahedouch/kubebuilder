@@ -1,5 +1,12 @@
 # Running and deploying the controller
 
+### Optional
+If opting to make any changes to the API definitions, then before proceeding,
+generate the manifests like CRs or CRDs with
+```bash
+make manifests
+```
+
 To test out the controller, we can run it locally against the cluster.
 Before we do so, though, we'll need to install our CRDs, as per the [quick
 start](/quick-start.md).  This will automatically update the YAML
@@ -13,7 +20,7 @@ Now that we've installed our CRDs, we can run the controller against our
 cluster.  This will use whatever credentials that we connect to the
 cluster with, so we don't need to worry about RBAC just yet.
 
-<aside class="note"> 
+<aside class="note">
 
 <h1>Running webhooks locally</h1>
 
@@ -32,7 +39,8 @@ your local code-run-test cycle, as we do below.
 In a separate terminal, run
 
 ```bash
-make run ENABLE_WEBHOOKS=false
+export ENABLE_WEBHOOKS=false
+make run
 ```
 
 You should see logs from the controller about starting up, but it won't do
@@ -65,5 +73,30 @@ make docker-build docker-push IMG=<some-registry>/<project-name>:tag
 make deploy IMG=<some-registry>/<project-name>:tag
 ```
 
+<aside class="note">
+<h1>Registry Permission</h1>
+
+This image ought to be published in the personal registry you specified. And it is required to have access to pull the image from the working environment.
+Make sure you have the proper permission to the registry if the above commands don't work.
+
+Consider incorporating Kind into your workflow for a faster, more efficient local development and CI experience.
+Note that, if you're using a Kind cluster, there's no need to push your image to a remote container registry.
+You can directly load your local image into your specified Kind cluster:
+
+```bash
+kind load docker-image <your-image-name>:tag --name <your-kind-cluster-name>
+```
+
+To know more, see: [Using Kind For Development Purposes and CI](./../reference/kind.md)
+
+<h1>RBAC errors</h1>
+
+If you encounter RBAC errors, you may need to grant yourself cluster-admin
+privileges or be logged in as admin. See [Prerequisites for using Kubernetes RBAC on GKE cluster v1.11.x and older][pre-rbc-gke] which may be your case.
+
+</aside>
+
 If we list cronjobs again like we did before, we should see the controller
 functioning again!
+
+[pre-rbc-gke]: https://cloud.google.com/kubernetes-engine/docs/how-to/role-based-access-control#iam-rolebinding-bootstrap

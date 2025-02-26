@@ -1,5 +1,5 @@
 /*
-Copyright 2021 The Kubernetes authors.
+Copyright 2025 The Kubernetes authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -17,12 +17,14 @@ limitations under the License.
 
 /*
  */
+
 package v1
 
 /*
  */
+
 import (
-	batchv1beta1 "k8s.io/api/batch/v1beta1"
+	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -32,7 +34,7 @@ import (
 
 // +kubebuilder:docs-gen:collapse=Imports
 
-// CronJobSpec defines the desired state of CronJob
+// CronJobSpec defines the desired state of CronJob.
 type CronJobSpec struct {
 	// +kubebuilder:validation:MinLength=0
 
@@ -60,7 +62,7 @@ type CronJobSpec struct {
 	Suspend *bool `json:"suspend,omitempty"`
 
 	// Specifies the job that will be created when executing a CronJob.
-	JobTemplate batchv1beta1.JobTemplateSpec `json:"jobTemplate"`
+	JobTemplate batchv1.JobTemplateSpec `json:"jobTemplate"`
 
 	// +kubebuilder:validation:Minimum=0
 
@@ -96,7 +98,7 @@ const (
 	ReplaceConcurrent ConcurrencyPolicy = "Replace"
 )
 
-// CronJobStatus defines the observed state of CronJob
+// CronJobStatus defines the observed state of CronJob.
 type CronJobStatus struct {
 	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
@@ -113,22 +115,24 @@ type CronJobStatus struct {
 // +kubebuilder:docs-gen:collapse=old stuff
 
 /*
-Since we'll have more than one version, we'll need to mark a storage version.
-This is the version that the Kubernetes API server uses to store our data.
-We'll chose the v1 version for our project.
+ Since we'll have more than one version, we'll need to mark a storage version.
+ This is the version that the Kubernetes API server uses to store our data.
+ We'll chose the v1 version for our project.
 
-We'll use the [`+kubebuilder:storageversion`](/reference/markers/crd.md) to do this.
+ We'll use the [`+kubebuilder:storageversion`](/reference/markers/crd.md) to do this.
 
-Note that multiple versions may exist in storage if they were written before
-the storage version changes -- changing the storage version only affects how
-objects are created/updated after the change.
+ Note that multiple versions may exist in storage if they were written before
+ the storage version changes -- changing the storage version only affects how
+ objects are created/updated after the change.
 */
 
-//+kubebuilder:object:root=true
-//+kubebuilder:subresource:status
-//+kubebuilder:storageversion
-
-// CronJob is the Schema for the cronjobs API
+// +kubebuilder:object:root=true
+// +kubebuilder:storageversion
+// +kubebuilder:conversion:hub
+// +kubebuilder:subresource:status
+// +versionName=v1
+// +kubebuilder:storageversion
+// CronJob is the Schema for the cronjobs API.
 type CronJob struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
@@ -140,9 +144,9 @@ type CronJob struct {
 /*
  */
 
-//+kubebuilder:object:root=true
+// +kubebuilder:object:root=true
 
-// CronJobList contains a list of CronJob
+// CronJobList contains a list of CronJob.
 type CronJobList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`

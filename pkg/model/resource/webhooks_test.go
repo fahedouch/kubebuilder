@@ -1,5 +1,5 @@
 /*
-Copyright 2021 The Kubernetes Authors.
+Copyright 2022 The Kubernetes Authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -17,8 +17,7 @@ limitations under the License.
 package resource
 
 import (
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/ginkgo/extensions/table"
+	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
 
@@ -53,12 +52,25 @@ var _ = Describe("Webhooks", func() {
 				Defaulting:     true,
 				Validation:     true,
 				Conversion:     true,
+				Spoke:          []string{"v2"},
 			}
 			Expect(webhook.Update(nil)).To(Succeed())
 			Expect(webhook.WebhookVersion).To(Equal(v1))
 			Expect(webhook.Defaulting).To(BeTrue())
 			Expect(webhook.Validation).To(BeTrue())
 			Expect(webhook.Conversion).To(BeTrue())
+			Expect(webhook.Spoke).To(Equal([]string{"v2"}))
+		})
+
+		It("should merge Spoke values without duplicates", func() {
+			webhook = Webhooks{
+				Spoke: []string{"v1"},
+			}
+			other = Webhooks{
+				Spoke: []string{"v1", "v2"},
+			}
+			Expect(webhook.Update(&other)).To(Succeed())
+			Expect(webhook.Spoke).To(ConsistOf("v1", "v2")) // Ensure no duplicates
 		})
 
 		Context("webhooks version", func() {

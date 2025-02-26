@@ -17,7 +17,7 @@ limitations under the License.
 package machinery
 
 import (
-	"sigs.k8s.io/kubebuilder/v3/pkg/model/resource"
+	"sigs.k8s.io/kubebuilder/v4/pkg/model/resource"
 )
 
 // PathMixin provides file builders with a path field
@@ -48,12 +48,25 @@ type TemplateMixin struct {
 	IfExistsActionMixin
 
 	// TemplateBody is the template body to execute
-	TemplateBody string
+	TemplateBody    string
+	parseDelimLeft  string
+	parseDelimRight string
 }
 
 // GetBody implements Template
 func (t *TemplateMixin) GetBody() string {
 	return t.TemplateBody
+}
+
+// SetDelim implements Template
+func (t *TemplateMixin) SetDelim(left, right string) {
+	t.parseDelimLeft = left
+	t.parseDelimRight = right
+}
+
+// GetDelim implements Template
+func (t *TemplateMixin) GetDelim() (string, string) {
+	return t.parseDelimLeft, t.parseDelimRight
 }
 
 // InserterMixin is the mixin that should be embedded in Inserter builders
@@ -114,17 +127,6 @@ type MultiGroupMixin struct {
 // InjectMultiGroup implements HasMultiGroup
 func (m *MultiGroupMixin) InjectMultiGroup(flag bool) {
 	m.MultiGroup = flag
-}
-
-// ComponentConfigMixin provides templates with a injectable component-config flag field
-type ComponentConfigMixin struct {
-	// ComponentConfig is the component-config flag
-	ComponentConfig bool
-}
-
-// InjectComponentConfig implements HasComponentConfig
-func (m *ComponentConfigMixin) InjectComponentConfig(flag bool) {
-	m.ComponentConfig = flag
 }
 
 // BoilerplateMixin provides templates with a injectable boilerplate field

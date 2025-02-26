@@ -16,8 +16,6 @@
 
 source "$(dirname "$0")/../common.sh"
 
-export KUBEBUILDER_ASSETS=$kb_root_dir/bin/
-
 # Executes the test of the testdata directories
 function test_project {
   rm -f "$(command -v controller-gen)"
@@ -30,16 +28,9 @@ function test_project {
   popd
 }
 
-prepare_staging_dir
-fetch_tools
+build_kb
 
-# Test project v2
-test_project project-v2
-test_project project-v2-multigroup
-test_project project-v2-addon
-
-# Test project v3
-test_project project-v3
-test_project project-v3-multigroup
-test_project project-v3-addon
-test_project project-v3-config
+# Project version v4-alpha
+test_project project-v4
+test_project project-v4-multigroup
+test_project project-v4-with-plugins

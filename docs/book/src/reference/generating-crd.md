@@ -1,6 +1,6 @@
 # Generating CRDs
 
-KubeBuilder uses a tool called [`controller-gen`][controller-tools] to
+Kubebuilder uses a tool called [`controller-gen`][controller-tools] to
 generate utility code and Kubernetes object YAML, like
 CustomResourceDefinitions.
 
@@ -10,7 +10,7 @@ packages.  In the case of CRDs, these are generally pulled from your
 `_types.go` files.  For more information on markers, see the [marker
 reference docs][marker-ref].
 
-KubeBuilder provides a `make` target to run controller-gen and generate
+Kubebuilder provides a `make` target to run controller-gen and generate
 CRDs: `make manifests`.
 
 When you run `make manifests`, you should see CRDs generated under the
@@ -157,69 +157,44 @@ in your CRD, and use a webhook to convert between them.
 For more details on this process, see the [multiversion
 tutorial](/multiversion-tutorial/tutorial.md).
 
-By default, KubeBuilder disables generating different validation for
+By default, Kubebuilder disables generating different validation for
 different versions of the Kind in your CRD, to be compatible with older
 Kubernetes versions.
 
 You'll need to enable this by switching the line in your makefile that
 says `CRD_OPTIONS ?= "crd:trivialVersions=true,preserveUnknownFields=false`
-to `CRD_OPTIONS ?= crd:preserveUnknownFields=false`
+to `CRD_OPTIONS ?= crd:preserveUnknownFields=false` if using v1beta CRDs,
+and `CRD_OPTIONS ?= crd` if using v1 (recommended).
 
 Then, you can use the `+kubebuilder:storageversion` [marker][crd-markers]
 to indicate the [GVK](/cronjob-tutorial/gvks.md "Group-Version-Kind") that
 should be used to store data by the API server.
 
-### Supporting older cluster versions
-
-By default, `kubebuilder create api` will create CRDs of API version `v1`,
-a version introduced in Kubernetes v1.16. If your project intends to support
-Kubernetes cluster versions older than v1.16, you must use the `v1beta1` API version:
-
-```sh
-kubebuilder create api --crd-version v1beta1 ...
-```
-
-To support Kubernetes clusters of version v1.14 or lower, you'll also need to
-remove the controller-gen option `preserveUnknownFields=false` from your Makefile.
-This is done by switching the line that says
-`CRD_OPTIONS ?= "crd:trivialVersions=true,preserveUnknownFields=false`
-to `CRD_OPTIONS ?= crd:trivialVersions=true`
-
-<aside class="note">
-
-`v1beta1` is deprecated and will be removed in Kubernetes v1.22, so upgrading is recommended.
-
-</aside>
-
 ## Under the hood
 
-KubeBuilder scaffolds out make rules to run `controller-gen`.  The rules
+Kubebuilder scaffolds out make rules to run `controller-gen`.  The rules
 will automatically install controller-gen if it's not on your path using
-`go get` with Go modules.
+`go install` with Go modules.
 
 You can also run `controller-gen` directly, if you want to see what it's
 doing.
 
 Each controller-gen "generator" is controlled by an option to
-controller-gen, using the same syntax as markers.  For instance, to
-generate CRDs with "trivial versions" (no version conversion webhooks), we
-call `controller-gen crd:trivialVersions=true paths=./api/...`.
-
-controller-gen also supports different output "rules" to control how
-and where output goes.  Notice the `manifests` make rule (condensed
-slightly to only generate CRDs):
+controller-gen, using the same syntax as markers. controller-gen
+also supports different output "rules" to control how and where output goes.
+Notice the `manifests` make rule (condensed slightly to only generate CRDs):
 
 ```makefile
 # Generate manifests for CRDs
 manifests: controller-gen
-	$(CONTROLLER_GEN) crd:trivialVersions=true paths="./..." output:crd:artifacts:config=config/crd/bases
+	$(CONTROLLER_GEN) rbac:roleName=manager-role crd webhook paths="./..." output:crd:artifacts:config=config/crd/bases
 ```
 
 It uses the `output:crd:artifacts` output rule to indicate that
 CRD-related config (non-code) artifacts should end up in
 `config/crd/bases` instead of `config/crd`.
 
-To see all the options for `controller-gen`, run
+To see all the options including generators for `controller-gen`, run
 
 ```shell
 $ controller-gen -h

@@ -14,14 +14,14 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package cli //nolint:dupl
+package cli
 
 import (
 	"fmt"
 
 	"github.com/spf13/cobra"
 
-	"sigs.k8s.io/kubebuilder/v3/pkg/plugin"
+	"sigs.k8s.io/kubebuilder/v4/pkg/plugin"
 )
 
 const editErrorMsg = "failed to edit project"

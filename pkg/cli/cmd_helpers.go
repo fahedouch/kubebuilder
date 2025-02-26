@@ -23,12 +23,12 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"sigs.k8s.io/kubebuilder/v3/pkg/config"
-	"sigs.k8s.io/kubebuilder/v3/pkg/config/store"
-	yamlstore "sigs.k8s.io/kubebuilder/v3/pkg/config/store/yaml"
-	"sigs.k8s.io/kubebuilder/v3/pkg/machinery"
-	"sigs.k8s.io/kubebuilder/v3/pkg/model/resource"
-	"sigs.k8s.io/kubebuilder/v3/pkg/plugin"
+	"sigs.k8s.io/kubebuilder/v4/pkg/config"
+	"sigs.k8s.io/kubebuilder/v4/pkg/config/store"
+	yamlstore "sigs.k8s.io/kubebuilder/v4/pkg/config/store/yaml"
+	"sigs.k8s.io/kubebuilder/v4/pkg/machinery"
+	"sigs.k8s.io/kubebuilder/v4/pkg/model/resource"
+	"sigs.k8s.io/kubebuilder/v4/pkg/plugin"
 )
 
 // noResolvedPluginError is returned by subcommands that require a plugin when none was resolved.
@@ -285,6 +285,7 @@ func (factory *executionHooksFactory) preRunEFunc(
 		}
 
 		// Pre-scaffold hook.
+		//nolint:revive
 		if err := factory.forEach(func(subcommand plugin.Subcommand) error {
 			if subcommand, hasPreScaffold := subcommand.(plugin.HasPreScaffold); hasPreScaffold {
 				return subcommand.PreScaffold(factory.fs)
@@ -302,6 +303,7 @@ func (factory *executionHooksFactory) preRunEFunc(
 func (factory *executionHooksFactory) runEFunc() func(*cobra.Command, []string) error {
 	return func(*cobra.Command, []string) error {
 		// Scaffold hook.
+		//nolint:revive
 		if err := factory.forEach(func(subcommand plugin.Subcommand) error {
 			return subcommand.Scaffold(factory.fs)
 		}, "unable to scaffold with"); err != nil {
@@ -321,6 +323,7 @@ func (factory *executionHooksFactory) postRunEFunc() func(*cobra.Command, []stri
 		}
 
 		// Post-scaffold hook.
+		//nolint:revive
 		if err := factory.forEach(func(subcommand plugin.Subcommand) error {
 			if subcommand, hasPostScaffold := subcommand.(plugin.HasPostScaffold); hasPostScaffold {
 				return subcommand.PostScaffold()

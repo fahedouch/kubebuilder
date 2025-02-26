@@ -15,7 +15,6 @@
 # limitations under the License.
 
 build_kb
-export PATH=$kb_root_dir/bin:$PATH
 fetch_tools
 install_kind
 
@@ -28,9 +27,20 @@ install_kind
 #   export KIND_CLUSTER=<kind cluster name>
 #   create_cluster <k8s version>
 function create_cluster {
+  echo "Getting kind config..."
+  KIND_VERSION=$1
   : ${KIND_CLUSTER:?"KIND_CLUSTER must be set"}
+  : ${1:?"k8s version must be set as arg 1"}
   if ! kind get clusters | grep -q $KIND_CLUSTER ; then
-    kind create cluster -v 4 --name $KIND_CLUSTER --retain --wait=1m --config $(dirname "$0")/kind-config.yaml --image=kindest/node:$1
+    version_prefix="${KIND_VERSION%.*}"
+    kind_config=$(dirname "$0")/kind-config.yaml
+    if test -f $(dirname "$0")/kind-config-${version_prefix}.yaml; then
+      kind_config=$(dirname "$0")/kind-config-${version_prefix}.yaml
+    fi
+    echo "Creating cluster..."
+    kind create cluster -v 4 --name $KIND_CLUSTER --retain --wait=1m --config ${kind_config} --image=kindest/node:$1
+    echo "Installing Calico..."
+    kubectl apply -f https://docs.projectcalico.org/manifests/calico.yaml
   fi
 }
 
@@ -50,6 +60,14 @@ function delete_cluster {
 function test_cluster {
   local flags="$@"
 
-  go test $(dirname "$0")/v2 $flags
-  go test $(dirname "$0")/v3 $flags -timeout 20m
+  docker pull memcached:1.6.26-alpine3.19
+  kind load docker-image --name $KIND_CLUSTER memcached:1.6.26-alpine3.19
+
+  docker pull busybox:1.36.1
+  kind load docker-image --name $KIND_CLUSTER busybox:1.36.1
+
+  go test $(dirname "$0")/grafana $flags -timeout 30m
+  go test $(dirname "$0")/deployimage $flags -timeout 30m
+  go test $(dirname "$0")/v4 $flags -timeout 30m
+  go test $(dirname "$0")/alphagenerate $flags -timeout 30m
 }

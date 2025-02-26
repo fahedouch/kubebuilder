@@ -1,6 +1,6 @@
 # Markers for Config/Code Generation
 
-KubeBuilder makes use of a tool called
+Kubebuilder makes use of a tool called
 [controller-gen](/reference/controller-gen.md) for
 generating utility code and Kubernetes YAML.  This code and config
 generation is controlled by the presence of special "marker comments" in
@@ -15,12 +15,25 @@ a marker name, optionally followed by some marker specific configuration:
 // +kubebuilder:printcolumn:JSONPath=".status.replicas",name=Replicas,type=string
 ```
 
+<aside class="note">
+<h1>difference between <code>// +optional</code> and <code>// +kubebuilder:validation:Optional</code></h1>
+
+Controller-gen supports both (see the output of `controller-gen crd -www`). `+kubebuilder:validation:Optional` and `+optional` can be applied to fields.
+
+But `+kubebuilder:validation:Optional` can also be applied at the package level such that it applies to every field in the package.
+
+If you're using controller-gen only then they're redundant, but if you're using other generators or you want developers that need to  build their own clients for your API, you'll want to also include `+optional`.
+
+The most reliable way in 1.x to get `+optional` is `omitempty`.
+
+</aside>
+
 See each subsection for information about different types of code and YAML
 generation.
 
-## Generating Code & Artifacts in KubeBuilder
+## Generating Code & Artifacts in Kubebuilder
 
-KubeBuilder projects have two `make` targets that make use of
+Kubebuilder projects have two `make` targets that make use of
 controller-gen:
 
 - `make manifests` generates Kubernetes object YAML, like
@@ -89,5 +102,5 @@ each key and value is separated by a colon (`:`), and each key-value
 pair is separated by a comma:
 
 ```go
-// +kubebuilder:validation:Default={magic: {numero: 42, stringified: forty-two}}
+// +kubebuilder:default={magic: {numero: 42, stringified: forty-two}}
 ```

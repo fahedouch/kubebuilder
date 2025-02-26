@@ -1,5 +1,5 @@
 /*
-Copyright 2021 The Kubernetes Authors.
+Copyright 2022 The Kubernetes Authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -29,12 +29,16 @@ const (
 	projectVersionsHeader = "Supported project versions"
 )
 
+var (
+	supportedPlatforms = []string{"darwin", "linux"}
+)
+
 func (c CLI) newRootCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     c.commandName,
 		Long:    c.description,
 		Example: c.rootExamples(),
-		RunE: func(cmd *cobra.Command, args []string) error {
+		RunE: func(cmd *cobra.Command, _ []string) error {
 			return cmd.Help()
 		},
 	}

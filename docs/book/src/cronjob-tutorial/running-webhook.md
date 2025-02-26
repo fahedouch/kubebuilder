@@ -1,33 +1,32 @@
 # Deploying Admission Webhooks
 
-## Kind Cluster
+## cert-manager
 
-It is recommended to develop your webhook with a
-[kind](../reference/kind.md) cluster for faster iteration.
-Why?
-
-- You can bring up a multi-node cluster locally within 1 minute.
-- You can tear it down in seconds.
-- You don't need to push your images to remote registry.
-
-## Cert Manager
-
-You need to follow [this](./cert-manager.md) to install the cert manager bundle.
+You need to follow [this](./cert-manager.md) to install the cert-manager bundle.
 
 ## Build your image
 
 Run the following command to build your image locally.
 
 ```bash
-make docker-build
+make docker-build docker-push IMG=<some-registry>/<project-name>:tag
 ```
 
-You don't need to push the image to a remote container registry if you are using
-a kind cluster. You can directly load your local image to your kind cluster:
+<aside class="note">
+<h1> Using Kind </h1>
+
+Consider incorporating Kind into your workflow for a faster, more efficient local development and CI experience.
+Note that, if you're using a Kind cluster, there's no need to push your image to a remote container registry.
+You can directly load your local image into your specified Kind cluster:
 
 ```bash
-kind load docker-image your-image-name:your-tag
+kind load docker-image <your-image-name>:tag --name <your-kind-cluster-name>
 ```
+
+To know more, see: [Using Kind For Development Purposes and CI](./../reference/kind.md)
+
+</aside>
+
 
 ## Deploy Webhooks
 
@@ -38,13 +37,19 @@ You need to enable the webhook and cert manager configuration through kustomize.
 {{#include ./testdata/project/config/default/kustomization.yaml}}
 ```
 
+And `config/crd/kustomization.yaml` should now look like the following:
+
+```yaml
+{{#include ./testdata/project/config/crd/kustomization.yaml}}
+```
+
 Now you can deploy it to your cluster by
 
 ```bash
 make deploy IMG=<some-registry>/<project-name>:tag
 ```
 
-Wait a while til the webhook pod comes up and the certificates are provisioned.
+Wait a while till the webhook pod comes up and the certificates are provisioned.
 It usually completes within 1 minute.
 
 Now you can create a valid CronJob to test your webhooks. The creation should

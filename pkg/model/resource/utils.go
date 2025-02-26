@@ -1,5 +1,5 @@
 /*
-Copyright 2021 The Kubernetes Authors.
+Copyright 2022 The Kubernetes Authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -27,7 +27,7 @@ import (
 // validateAPIVersion validates CRD or Webhook versions
 func validateAPIVersion(version string) error {
 	switch version {
-	case "v1beta1", "v1":
+	case "v1":
 		return nil
 	default:
 		return fmt.Errorf("API version must be one of: v1beta1, v1")
@@ -47,11 +47,8 @@ func safeImport(unsafe string) string {
 
 // APIPackagePath returns the default path
 func APIPackagePath(repo, group, version string, multiGroup bool) string {
-	if multiGroup {
-		if group != "" {
-			return path.Join(repo, "apis", group, version)
-		}
-		return path.Join(repo, "apis", version)
+	if multiGroup && group != "" {
+		return path.Join(repo, "api", group, version)
 	}
 	return path.Join(repo, "api", version)
 }

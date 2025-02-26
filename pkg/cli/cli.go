@@ -26,15 +26,15 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 
-	"sigs.k8s.io/kubebuilder/v3/pkg/config"
-	yamlstore "sigs.k8s.io/kubebuilder/v3/pkg/config/store/yaml"
-	"sigs.k8s.io/kubebuilder/v3/pkg/machinery"
-	"sigs.k8s.io/kubebuilder/v3/pkg/model/stage"
-	"sigs.k8s.io/kubebuilder/v3/pkg/plugin"
+	"sigs.k8s.io/kubebuilder/v4/pkg/config"
+	yamlstore "sigs.k8s.io/kubebuilder/v4/pkg/config/store/yaml"
+	"sigs.k8s.io/kubebuilder/v4/pkg/machinery"
+	"sigs.k8s.io/kubebuilder/v4/pkg/model/stage"
+	"sigs.k8s.io/kubebuilder/v4/pkg/plugin"
 )
 
 const (
-	noticeColor    = "\033[1;36m%s\033[0m"
+	noticeColor    = "\033[1;33m%s\033[0m"
 	deprecationFmt = "[Deprecation Notice] %s\n\n"
 
 	pluginsFlag        = "plugins"
@@ -443,8 +443,8 @@ func (c *CLI) addExtraCommands() error {
 // printDeprecationWarnings prints the deprecation warnings of the resolved plugins.
 func (c CLI) printDeprecationWarnings() {
 	for _, p := range c.resolvedPlugins {
-		if d, isDeprecated := p.(plugin.Deprecated); isDeprecated {
-			fmt.Printf(noticeColor, fmt.Sprintf(deprecationFmt, d.DeprecationWarning()))
+		if p != nil && p.(plugin.Deprecated) != nil && len(p.(plugin.Deprecated).DeprecationWarning()) > 0 {
+			_, _ = fmt.Fprintf(os.Stderr, noticeColor, fmt.Sprintf(deprecationFmt, p.(plugin.Deprecated).DeprecationWarning()))
 		}
 	}
 }
@@ -461,4 +461,9 @@ func (c CLI) metadata() plugin.CLIMetadata {
 // If an error is found, command help and examples will be printed.
 func (c CLI) Run() error {
 	return c.cmd.Execute()
+}
+
+// Command returns the underlying root command.
+func (c CLI) Command() *cobra.Command {
+	return c.cmd
 }
